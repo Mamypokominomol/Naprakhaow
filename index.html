@@ -109,7 +109,7 @@
         .touch-zone { pointer-events: auto; position: absolute; }
 
         #joystick-area {
-            bottom: 40px; left: 40px; width: 160px; height: 160px; /* ใหญ่ขึ้นนิดหน่อย */
+            bottom: 40px; left: 40px; width: 160px; height: 160px;
             background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%;
         }
         #joystick-knob {
@@ -119,7 +119,7 @@
 
         #action-area {
             bottom: 40px; right: 40px;
-            display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 20px;
+            display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 25px;
         }
         .mob-btn {
             width: 80px; height: 80px; background: rgba(0,0,0,0.5); border: 2px solid white; border-radius: 50%;
@@ -127,8 +127,16 @@
             user-select: none; transition: 0.1s;
         }
         .mob-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.95); }
-        #btn-main { width: 100px; height: 100px; font-size: 50px; background: rgba(200, 50, 50, 0.6); }
+        #btn-main { width: 110px; height: 110px; font-size: 50px; background: rgba(200, 50, 50, 0.6); }
         #btn-run.active { background: rgba(0, 255, 0, 0.6); border-color: #0f0; }
+
+        /* Fullscreen Button */
+        #btn-fs {
+            position: absolute; top: 20px; right: 20px; width: 50px; height: 50px;
+            background: rgba(0,0,0,0.5); border: 2px solid white; border-radius: 10px;
+            color: white; font-size: 24px; display: flex; justify-content: center; align-items: center;
+            pointer-events: auto; z-index: 30; cursor: pointer;
+        }
 
         /* Show mobile controls on touch devices */
         @media (hover: none) and (pointer: coarse) {
@@ -136,7 +144,7 @@
             .pc-hint { display: none; }
         }
         
-        /* Look Zone (Invisible - ครอบคลุมครึ่งขวา) */
+        /* Look Zone (Invisible - Covering right side) */
         #look-zone {
             position: absolute; top: 0; right: 0; width: 60%; height: 100%; pointer-events: auto;
         }
@@ -189,6 +197,8 @@
 
         <!-- MOBILE CONTROLS -->
         <div id="mobile-controls">
+            <div id="btn-fs" onclick="toggleFullscreen()">⛶</div>
+            
             <!-- Joystick -->
             <div id="joystick-area" class="touch-zone">
                 <div id="joystick-knob"></div>
@@ -198,7 +208,7 @@
             <!-- Buttons -->
             <div id="action-area" class="touch-zone">
                 <div class="mob-btn" id="btn-main">👊</div>
-                <div style="display:flex; gap:15px;">
+                <div style="display:flex; gap:20px;">
                     <div class="mob-btn" id="btn-skill">⚡</div>
                     <div class="mob-btn" id="btn-run">🏃</div>
                 </div>
@@ -261,6 +271,9 @@
         
         // Touch Input State
         const touchInput = { x: 0, y: 0, run: false };
+        let joyTouchId = null;
+        let lookTouchId = null;
+        let lastLookX = 0;
         
         function init() {
             updateCharOptions(); 
@@ -286,7 +299,7 @@
             window.addEventListener('keyup', e => keys[e.code] = false);
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('click', () => {
-                // Only lock pointer if not touching controls
+                // Only lock pointer if not touching controls (PC logic)
                 if(state.playing && !document.pointerLockElement && window.innerWidth > 768) container.requestPointerLock();
                 if(state.playing && config.role === 'hunter' && window.innerWidth > 768) attack();
             });
@@ -302,45 +315,80 @@
             const joyKnob = document.getElementById('joystick-knob');
             const lookZone = document.getElementById('look-zone');
             
-            // Joystick Logic
-            joyArea.addEventListener('touchstart', (e) => handleJoy(e, joyArea, joyKnob));
-            joyArea.addEventListener('touchmove', (e) => handleJoy(e, joyArea, joyKnob));
-            joyArea.addEventListener('touchend', (e) => resetJoy(joyKnob));
+            // --- JOYSTICK LOGIC (Track Specific Touch) ---
+            joyArea.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.changedTouches[0];
+                joyTouchId = touch.identifier;
+                handleJoy(touch, joyArea, joyKnob);
+            });
+            joyArea.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === joyTouchId) {
+                        handleJoy(e.changedTouches[i], joyArea, joyKnob);
+                        break;
+                    }
+                }
+            });
+            joyArea.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === joyTouchId) {
+                        joyTouchId = null;
+                        resetJoy(joyKnob);
+                        break;
+                    }
+                }
+            });
             
-            // Look Logic (Increased Sensitivity)
-            let lastTouchX = 0;
-            lookZone.addEventListener('touchstart', (e) => { lastTouchX = e.touches[0].clientX; });
+            // --- LOOK LOGIC (Track Specific Touch) ---
+            lookZone.addEventListener('touchstart', (e) => { 
+                e.preventDefault();
+                const touch = e.changedTouches[0];
+                lookTouchId = touch.identifier;
+                lastLookX = touch.clientX;
+            });
             lookZone.addEventListener('touchmove', (e) => {
                 e.preventDefault();
-                const x = e.touches[0].clientX;
-                const dx = x - lastTouchX;
-                lastTouchX = x;
-                if(state.playing) player.rotation.y -= dx * 0.02; // Sensitivity Increased (was 0.005)
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    if (t.identifier === lookTouchId) {
+                        const dx = t.clientX - lastLookX;
+                        lastLookX = t.clientX;
+                        if(state.playing) player.rotation.y -= dx * 0.008; // Adjusted Sensitivity
+                        break;
+                    }
+                }
+            });
+            lookZone.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === lookTouchId) {
+                        lookTouchId = null;
+                        break;
+                    }
+                }
             });
 
-            // Buttons Logic
+            // --- BUTTONS (Direct Touch) ---
             document.getElementById('btn-main').addEventListener('touchstart', (e) => { 
                 e.preventDefault(); 
-                e.stopPropagation();
                 if(config.role === 'hunter') attack(); 
                 else tryInteract(); 
             });
             document.getElementById('btn-skill').addEventListener('touchstart', (e) => { 
                 e.preventDefault(); 
-                e.stopPropagation();
                 useSkill(); 
             });
             document.getElementById('btn-run').addEventListener('touchstart', (e) => { 
                 e.preventDefault(); 
-                e.stopPropagation();
                 touchInput.run = !touchInput.run;
                 e.target.classList.toggle('active', touchInput.run);
             });
         }
 
-        function handleJoy(e, area, knob) {
-            e.preventDefault();
-            const touch = e.touches[0];
+        function handleJoy(touch, area, knob) {
             const rect = area.getBoundingClientRect();
             const cx = rect.left + rect.width/2;
             const cy = rect.top + rect.height/2;
@@ -358,7 +406,6 @@
             
             knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
             
-            // Update state (-1 to 1)
             touchInput.x = dx / maxDist;
             touchInput.y = dy / maxDist;
         }
@@ -367,6 +414,19 @@
             knob.style.transform = `translate(-50%, -50%)`;
             touchInput.x = 0;
             touchInput.y = 0;
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable full-screen mode: ${err.message}`);
+                });
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(err=>console.log(err));
+                }
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
         }
 
         function selectRole(r, el) {
