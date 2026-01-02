@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Monster Run: Survival</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background: #000; color: white; }
+        
+        /* UI Layers */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+        
+        /* START SCREEN */
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1a1a1a, #000000);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            pointer-events: auto; z-index: 20;
+        }
+        .menu-box {
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
+            padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2);
+            text-align: center; max-width: 400px; width: 90%;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+        h1 { margin: 0 0 20px 0; font-size: 40px; text-shadow: 0 0 10px #ff0000; color: #ff4b1f; }
+        .selector { margin: 15px 0; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #aaa; }
+        select, input { width: 100%; padding: 10px; border-radius: 5px; border: none; font-size: 16px; }
+        
+        /* GAME HUD */
+        #hud { display: none; }
+        #score-board { 
+            position: absolute; top: 20px; left: 20px; 
+            font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #000;
+        }
+        #skill-btn {
+            position: absolute; bottom: 30px; right: 30px;
+            width: 80px; height: 80px; border-radius: 50%;
+            background: rgba(0, 255, 255, 0.3); border: 2px solid cyan;
+            color: cyan; font-size: 14px; font-weight: bold;
+            display: flex; justify-content: center; align-items: center;
+            pointer-events: auto; cursor: pointer;
+            box-shadow: 0 0 15px cyan; transition: 0.3s;
+        }
+        #skill-btn.cooldown { background: rgba(50,50,50,0.5); border-color: #555; color: #888; box-shadow: none; }
+
+        /* GAME OVER */
+        #game-over { 
+            display: none; position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); text-align: center; 
+            z-index: 30; pointer-events: auto;
+        }
+        
+        .btn-main {
+            background: #ff4b1f; color: white; border: none; padding: 15px 40px;
+            font-size: 20px; border-radius: 50px; cursor: pointer; margin-top: 20px;
+            box-shadow: 0 5px 20px rgba(255, 75, 31, 0.4);
+            font-weight: bold; transition: transform 0.1s;
+        }
+        .btn-main:active { transform: scale(0.95); }
+
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="start-screen">
+        <div class="menu-box">
+            <h1>MONSTER RUN</h1>
+            <div class="selector">
+                <label>👤 เลือกตัวละคร</label>
+                <select id="char-select">
+                    <option value="hero">Hero (เสื้อส้ม - สมดุล)</option>
+                    <option value="ninja">Ninja (ชุดดำ - ตัวเล็ก)</option>
+                    <option value="punk">Punk (หัวชมพู - เท่)</option>
+                </select>
+            </div>
+            <div class="selector">
+                <label>🌍 เลือกแผนที่</label>
+                <select id="map-select">
+                    <option value="day">City Day (กลางวัน - สดใส)</option>
+                    <option value="horror">Haunted Road (สยองขวัญ - มืด)</option>
+                </select>
+            </div>
+            <div class="selector">
+                <label>⚡ สกิลติดตัว</label>
+                <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:5px; font-size:14px; color:#0ff;">
+                    "Ghost Dash" (กด E หรือปุ่มฟ้า)<br>พุ่งทะลุสิ่งของ + วิ่งไว 2 วินาที
+                </div>
+            </div>
+            <button class="btn-main" onclick="startGame()">เริ่มเกม!</button>
+        </div>
+    </div>
+
+    <div id="ui-layer">
+        <div id="hud">
+            <div id="score-board">💰 0</div>
+            <div id="skill-btn" onclick="activateSkill()">SKILL<br>(E)</div>
+            <div style="position:absolute; bottom:20px; left:20px; font-size:12px; opacity:0.7;">
+                คอม: A/D/Space | มือถือ: ปัดจอ
+            </div>
+        </div>
+
+        <div id="game-over">
+            <h1 style="color:red; font-size:60px; margin-bottom:10px;">💀 DEAD</h1>
+            <p id="final-score" style="font-size:24px;">Score: 0</p>
+            <button class="btn-main" onclick="location.reload()">กลับหน้าหลัก</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Game Variables ---
+        let scene, camera, renderer;
+        let player, monster, road, bgMesh;
+        let clock = new THREE.Clock();
+        let obstacles = [], coins = [], roadLines = [];
+        let score = 0;
+        let gameState = 'MENU'; // MENU, PLAY, GAMEOVER
+        let lane = 0; 
+        let speed = 20; 
+        let baseSpeed = 20;
+        let playerY = 0;
+        let jumpVelocity = 0;
+        let gravity = -1.2;
+        let isJumping = false;
+        
+        // Skill System
+        let canUseSkill = true;
+        let isSkillActive = false; // Ghost mode
+        
+        // Settings
+        let selectedChar = 'hero';
+        let selectedMap = 'day';
+
+        // Audio Context
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // --- 1. Sound System ---
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'jump') {
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.linearRampToValueAtTime(500, now + 0.1);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'coin') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(1200, now);
+                osc.frequency.setValueAtTime(1800, now + 0.1);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'crash') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+            } else if (type === 'skill') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.linearRampToValueAtTime(800, now + 0.5);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 1);
+                osc.start(now); osc.stop(now + 1);
+            }
+        }
+
+        // --- 2. Initialization ---
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 7, 12); // มุมมองข้ามหัว
+            camera.lookAt(0, 0, -5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Default Lighting (Will be updated by map)
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.position.set(10, 20, 10);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+            createRoad();
+            createMonster(); // สร้างไว้ก่อน แต่ซ่อน
+            
+            animate();
+        }
+
+        // --- 3. Start Game Logic ---
+        function startGame() {
+            selectedChar = document.getElementById('char-select').value;
+            selectedMap = document.getElementById('map-select').value;
+            
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('hud').style.display = 'block';
+            
+            applyMapTheme(selectedMap);
+            createPlayer(selectedChar);
+            
+            gameState = 'PLAY';
+            monster.visible = false; // ซ่อนปีศาจตอนเริ่ม
+        }
+
+        function applyMapTheme(mapType) {
+            // ลบแสงเก่า
+            scene.children.forEach(c => { if(c.isLight) scene.remove(c); });
+
+            if (mapType === 'horror') {
+                // Theme: Horror
+                scene.background = new THREE.Color(0x050505);
+                scene.fog = new THREE.Fog(0x050505, 10, 40); // หมอกหนามาก
+                
+                const spotLight = new THREE.SpotLight(0xffffff, 0.8);
+                spotLight.position.set(0, 10, 5);
+                spotLight.target.position.set(0, 0, -10);
+                spotLight.penumbra = 0.5;
+                spotLight.castShadow = true;
+                scene.add(spotLight);
+                scene.add(spotLight.target);
+                
+                scene.add(new THREE.AmbientLight(0x220000, 0.3)); // แสงแดงสลัว
+                
+                // เปลี่ยนสีถนน
+                road.material.color.setHex(0x1a1a1a);
+                
+            } else {
+                // Theme: Day
+                scene.background = new THREE.Color(0x87CEEB);
+                scene.fog = new THREE.Fog(0x87CEEB, 30, 90);
+                
+                const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+                dirLight.position.set(20, 50, 20);
+                dirLight.castShadow = true;
+                scene.add(dirLight);
+                scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+                
+                road.material.color.setHex(0x333333);
+            }
+        }
+
+        // --- 4. Objects Creation ---
+        function createRoad() {
+            const geometry = new THREE.PlaneGeometry(16, 1000);
+            const material = new THREE.MeshPhongMaterial({ color: 0x333333 });
+            road = new THREE.Mesh(geometry, material);
+            road.rotation.x = -Math.PI / 2;
+            road.receiveShadow = true;
+            scene.add(road);
+        }
+
+        function createPlayer(type) {
+            if (player) scene.remove(player);
+            player = new THREE.Group();
+
+            let colors = { skin: 0xffccaa, shirt: 0xff5722, pants: 0x3f51b5 };
+            
+            if (type === 'ninja') colors = { skin: 0xffccaa, shirt: 0x111111, pants: 0x222222 };
+            if (type === 'punk') colors = { skin: 0xffccaa, shirt: 0xff00cc, pants: 0x000000 };
+
+            // Body parts construction
+            const skinMat = new THREE.MeshPhongMaterial({ color: colors.skin });
+            const shirtMat = new THREE.MeshPhongMaterial({ color: colors.shirt });
+            const pantsMat = new THREE.MeshPhongMaterial({ color: colors.pants });
+
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), skinMat);
+            head.position.y = 2.4;
+            
+            // Punk hair
+            if (type === 'punk') {
+                const hair = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 0.8), new THREE.MeshBasicMaterial({color:0x00ff00}));
+                hair.position.y = 0.5;
+                head.add(hair);
+            }
+
+            player.add(head);
+
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 0.5), shirtMat);
+            body.position.y = 1.4;
+            player.add(body);
+
+            player.leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), skinMat);
+            player.leftArm.position.set(-0.6, 1.6, 0);
+            player.add(player.leftArm);
+
+            player.rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), skinMat);
+            player.rightArm.position.set(0.6, 1.6, 0);
+            player.add(player.rightArm);
+
+            player.leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.2, 0.4), pantsMat);
+            player.leftLeg.position.set(-0.25, 0.6, 0);
+            player.add(player.leftLeg);
+
+            player.rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.2, 0.4), pantsMat);
+            player.rightLeg.position.set(0.25, 0.6, 0);
+            player.add(player.rightLeg);
+
+            player.castShadow = true;
+            scene.add(player);
+        }
+
+        function createMonster() {
+            monster = new THREE.Group();
+            const mat = new THREE.MeshPhongMaterial({ color: 0x111111 }); 
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // ตาแดงแป๊ด
+
+            // ตัวใหญ่ ดำทะมึน
+            const body = new THREE.Mesh(new THREE.BoxGeometry(2.5, 3.5, 1.5), mat);
+            body.position.y = 1.75;
+            monster.add(body);
+
+            // ตา
+            const leftEye = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.1), eyeMat);
+            leftEye.position.set(-0.6, 2.5, -0.8);
+            monster.add(leftEye);
+            
+            const rightEye = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.1), eyeMat);
+            rightEye.position.set(0.6, 2.5, -0.8);
+            monster.add(rightEye);
+            
+            // แขนยาวน่ากลัว
+            const lArm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.5, 0.4), mat);
+            lArm.position.set(-1.5, 2, 0);
+            lArm.rotation.z = 0.2;
+            monster.add(lArm);
+            
+            const rArm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.5, 0.4), mat);
+            rArm.position.set(1.5, 2, 0);
+            rArm.rotation.z = -0.2;
+            monster.add(rArm);
+            
+            monster.lArm = lArm;
+            monster.rArm = rArm;
+
+            monster.visible = false; // เริ่มต้นซ่อนไว้
+            scene.add(monster);
+        }
+
+        // --- 5. Gameplay Mechanics ---
+        function spawnObstacle() {
+            if (gameState !== 'PLAY') return;
+            const zPos = -80;
+            const laneChoice = Math.floor(Math.random() * 3) - 1;
+            const xPos = laneChoice * 3.5;
+
+            if (Math.random() > 0.4) {
+                // Obstacle
+                const geometry = new THREE.BoxGeometry(2.5, 2.5, 2.5);
+                const matColor = selectedMap === 'horror' ? 0x550000 : 0x884400; // กล่องเลือดหมูถ้าเป็น map ผี
+                const material = new THREE.MeshPhongMaterial({ color: matColor });
+                const obs = new THREE.Mesh(geometry, material);
+                obs.position.set(xPos, 1.25, zPos);
+                obs.castShadow = true;
+                scene.add(obs);
+                obstacles.push(obs);
+            } else {
+                // Coin
+                const geometry = new THREE.CylinderGeometry(0.6, 0.6, 0.1, 16);
+                const material = new THREE.MeshPhongMaterial({ color: 0xffd700, emissive: 0xaa6600 });
+                const coin = new THREE.Mesh(geometry, material);
+                coin.rotation.x = Math.PI / 2;
+                coin.position.set(xPos, 1.5, zPos);
+                scene.add(coin);
+                coins.push(coin);
+            }
+        }
+        
+        function spawnLine() {
+            if (gameState !== 'PLAY') return;
+            const geo = new THREE.PlaneGeometry(0.5, 8);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+            const line = new THREE.Mesh(geo, mat);
+            line.rotation.x = -Math.PI / 2;
+            line.position.set(0, 0.02, -80);
+            scene.add(line);
+            roadLines.push(line);
+        }
+
+        setInterval(spawnObstacle, 800);
+        setInterval(spawnLine, 150);
+
+        function activateSkill() {
+            if (gameState !== 'PLAY' || !canUseSkill) return;
+            
+            canUseSkill = false;
+            isSkillActive = true;
+            playSound('skill');
+            
+            // Visual Effect
+            const btn = document.getElementById('skill-btn');
+            btn.classList.add('cooldown');
+            
+            // Boost Speed & Transparent
+            speed = 50; 
+            player.children.forEach(m => { if(m.material) m.material.opacity = 0.5; if(m.material) m.material.transparent = true; });
+
+            // Reset after 2 seconds
+            setTimeout(() => {
+                isSkillActive = false;
+                speed = baseSpeed;
+                player.children.forEach(m => { if(m.material) m.material.opacity = 1.0; if(m.material) m.material.transparent = false; });
+            }, 2000);
+
+            // Cooldown 10s
+            setTimeout(() => {
+                canUseSkill = true;
+                btn.classList.remove('cooldown');
+            }, 10000);
+        }
+
+        // --- 6. Main Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            if (gameState === 'PLAY') {
+                updateGameLogic(time, delta);
+            } else if (gameState === 'GAMEOVER') {
+                updateGameOverAnimation(time);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function updateGameLogic(time, delta) {
+            // Move Environment
+            [obstacles, coins, roadLines].forEach(arr => {
+                for (let i = arr.length - 1; i >= 0; i--) {
+                    arr[i].position.z += speed * delta;
+                    if (arr[i].position.z > 20) {
+                        scene.remove(arr[i]);
+                        arr.splice(i, 1);
+                    }
+                }
+            });
+
+            // Player Movement
+            player.position.x += ((lane * 3.5) - player.position.x) * 0.15;
+            
+            // Jump Physics
+            if (isJumping) {
+                playerY += jumpVelocity;
+                jumpVelocity += gravity * 0.05;
+                if (playerY <= 0) { playerY = 0; isJumping = false; }
+            }
+            player.position.y = playerY;
+
+            // Animations
+            const runSpeed = speed * 0.8;
+            player.leftLeg.rotation.x = Math.sin(time * runSpeed) * 0.8;
+            player.rightLeg.rotation.x = Math.sin(time * runSpeed + Math.PI) * 0.8;
+            player.leftArm.rotation.x = Math.sin(time * runSpeed + Math.PI) * 0.6;
+            player.rightArm.rotation.x = Math.sin(time * runSpeed) * 0.6;
+
+            // Collision Detection
+            obstacles.forEach(obs => {
+                if (!isSkillActive && 
+                    Math.abs(obs.position.z - player.position.z) < 1.5 && 
+                    Math.abs(obs.position.x - player.position.x) < 1.5 && 
+                    player.position.y < 1.5) {
+                    gameOver();
+                }
+            });
+
+            coins.forEach((c, i) => {
+                c.rotation.z += 0.1;
+                if (Math.abs(c.position.z - player.position.z) < 1.5 && 
+                    Math.abs(c.position.x - player.position.x) < 1.5) {
+                    scene.remove(c);
+                    coins.splice(i, 1);
+                    score += 10;
+                    playSound('coin');
+                    document.getElementById('score-board').innerText = `💰 ${score}`;
+                }
+            });
+        }
+
+        function updateGameOverAnimation(time) {
+            // ปีศาจวิ่งจากข้างหลังเข้ามาหา (Jumpscare)
+            if (monster.position.z > -1) {
+                monster.position.z -= 15 * 0.016; // วิ่งเข้ามาเร็วๆ
+                monster.position.y = 1.75 + Math.sin(time * 20) * 0.5; // ตัวสั่นๆ
+                
+                // แขนปีศาจขยับบ้าคลั่ง
+                monster.lArm.rotation.x = Math.sin(time * 30) * 2;
+                monster.rArm.rotation.x = Math.cos(time * 30) * 2;
+            }
+        }
+
+        function gameOver() {
+            gameState = 'GAMEOVER';
+            playSound('crash');
+            
+            // ล้มลง
+            player.rotation.x = -Math.PI / 2;
+            player.position.y = 0.5;
+
+            // เผยตัวปีศาจ
+            monster.visible = true;
+            monster.position.set(player.position.x, 1.75, 10); // เริ่มจากด้านหลังไกลๆ
+            monster.rotation.y = Math.PI; // หันหน้ามาทางกล้อง
+
+            document.getElementById('game-over').style.display = 'block';
+            document.getElementById('final-score').innerText = 'Score: ' + score;
+            document.getElementById('hud').style.display = 'none';
+        }
+
+        // --- 7. Controls ---
+        window.addEventListener('keydown', (e) => {
+            if (gameState !== 'PLAY') return;
+            if (['ArrowLeft', 'a'].includes(e.key) && lane > -1) lane--;
+            if (['ArrowRight', 'd'].includes(e.key) && lane < 1) lane++;
+            if ([' ', 'ArrowUp', 'w'].includes(e.key) && !isJumping) {
+                isJumping = true; jumpVelocity = 0.7; playSound('jump');
+            }
+            if (e.key === 'e') activateSkill();
+        });
+
+        // Touch
+        let tsX = 0, tsY = 0;
+        window.addEventListener('touchstart', e => { tsX = e.changedTouches[0].screenX; tsY = e.changedTouches[0].screenY; });
+        window.addEventListener('touchend', e => {
+            const teX = e.changedTouches[0].screenX, teY = e.changedTouches[0].screenY;
+            const dx = teX - tsX, dy = teY - tsY;
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 40 && lane < 1) lane++;
+                if (dx < -40 && lane > -1) lane--;
+            } else if (dy < -40 && !isJumping) {
+                isJumping = true; jumpVelocity = 0.7; playSound('jump');
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>
