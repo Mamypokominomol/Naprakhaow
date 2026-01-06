@@ -1,767 +1,673 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Survival V: Complete Edition</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;800&family=Creepster&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>วิสาหกิจชุมชนนาข้าวแปลงใหญ่ตำบลนาพละ - ข้าวเบายอดม่วงตรัง</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
-        /* Base Settings */
-        body { margin: 0; overflow: hidden; font-family: 'Kanit', sans-serif; background: #050505; user-select: none; -webkit-user-select: none; touch-action: none; }
-        #game-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        
-        /* UI Layers */
-        .ui-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: rgba(10, 10, 15, 0.98); color: #ddd; transition: opacity 0.5s;
-        }
-        .hidden { display: none !important; }
-
-        h1 { font-family: 'Creepster', cursive; color: #d32f2f; font-size: 4rem; margin: 0; text-shadow: 0 0 20px #ff0000; letter-spacing: 5px; }
-        
-        /* Menu Styles */
-        .role-selector { display: flex; gap: 20px; margin: 20px; }
-        .role-card {
-            width: 150px; padding: 20px; background: #222; border: 2px solid #555; cursor: pointer;
-            text-align: center; border-radius: 10px; transition: 0.3s;
-        }
-        .role-card:hover { transform: scale(1.05); }
-        .role-card.selected { border-color: gold; background: #443300; box-shadow: 0 0 15px gold; }
-        .role-card.hunter-role.selected { border-color: red; background: #440000; box-shadow: 0 0 15px red; }
-
-        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
-        .char-btn { padding: 10px; background: #333; border: 1px solid #555; color: #aaa; cursor: pointer; }
-        .char-btn.selected { background: #eee; color: #000; font-weight: bold; }
-
-        button.start-btn {
-            background: #d32f2f; border: none; padding: 15px 50px; font-size: 2rem;
-            color: white; font-family: 'Creepster'; border-radius: 5px; cursor: pointer;
-            box-shadow: 0 0 20px #ff0000; margin-top: 30px; letter-spacing: 2px;
-        }
-
-        /* HUD Styles */
-        #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; display: none; }
-        
-        #minimap-container {
-            position: absolute; top: 20px; left: 20px; width: 130px; height: 130px;
-            background: rgba(0, 0, 0, 0.85); border: 2px solid #666; border-radius: 8px;
-            overflow: hidden; box-shadow: 0 0 10px black;
-        }
-        .mm-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; transform: translate(-50%, -50%); transition: top 0.1s, left 0.1s; }
-        #mm-player { background: #00ff00; z-index: 12; border: 2px solid white; display: flex; justify-content: center; align-items: center; }
-        .mm-arrow { width: 0; height: 0; border-left: 3px solid transparent; border-right: 3px solid transparent; border-bottom: 6px solid black; transform: translateY(-2px); }
-        .mm-hunter { background: #ff0000; z-index: 10; box-shadow: 0 0 6px red; width: 10px; height: 10px; }
-        .mm-survivor { background: #00ffff; z-index: 9; border: 1px solid blue; }
-        
-        #health-display { position: absolute; top: 160px; left: 20px; font-size: 30px; color: #ff4444; text-shadow: 0 0 5px black; }
-
-        .status-area { position: absolute; top: 20px; right: 20px; text-align: right; }
-        #stamina-bar-bg { width: 220px; height: 12px; background: #222; border: 1px solid #555; margin-bottom: 5px; display: inline-block; border-radius: 6px; overflow: hidden; }
-        #stamina-bar { width: 100%; height: 100%; background: #4caf50; transition: width 0.1s; }
-
-        .action-prompt {
-            position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(255, 215, 0, 0.9); color: black; padding: 10px 20px; border-radius: 20px;
-            font-weight: bold; font-size: 1.5rem; display: none; text-shadow: 0 0 5px white; box-shadow: 0 0 15px gold;
-        }
-
-        .pc-hint {
-            position: absolute; bottom: 20px; right: 20px; 
-            background: rgba(0,0,0,0.5); color: #aaa; padding: 10px; border-radius: 5px; font-size: 0.8rem; text-align: right;
-        }
-
-        /* --- MOBILE CONTROLS --- */
-        #mobile-controls { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
-        .touch-zone { pointer-events: auto; position: absolute; }
-
-        #joystick-area {
-            bottom: 30px; left: 30px; width: 160px; height: 160px;
-            background: rgba(255, 255, 255, 0.08); border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 50%;
-        }
-        #joystick-knob {
-            position: absolute; top: 50%; left: 50%; width: 60px; height: 60px;
-            background: rgba(255, 255, 255, 0.4); border-radius: 50%; transform: translate(-50%, -50%);
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        #action-area {
-            bottom: 30px; right: 30px;
-            display: grid; grid-template-columns: 80px 100px; grid-template-rows: 80px 100px; gap: 15px;
-            align-items: end; justify-items: center;
-        }
-        .mob-btn {
-            background: rgba(0,0,0,0.6); border: 2px solid #ccc; border-radius: 50%;
-            color: white; display: flex; justify-content: center; align-items: center;
-            user-select: none; transition: 0.1s; font-size: 24px; pointer-events: auto;
-            backdrop-filter: blur(4px);
-        }
-        .mob-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
-        
-        #btn-main { width: 100px; height: 100px; font-size: 45px; border-color: #ffca28; grid-column: 2; grid-row: 2; }
-        #btn-main.hunter-atk { border-color: #ff4444; background: rgba(200, 50, 50, 0.3); }
-        
-        #btn-interact { 
-            width: 80px; height: 80px; font-size: 30px; border-color: #03a9f4; 
-            grid-column: 2; grid-row: 1; opacity: 0.3; transform: scale(0.8); transition: 0.2s; 
-        }
-        #btn-interact.active { opacity: 1; transform: scale(1); box-shadow: 0 0 15px #03a9f4; background: rgba(3, 169, 244, 0.3); }
-        
-        #btn-skill { width: 70px; height: 70px; grid-column: 1; grid-row: 2; margin-bottom: 10px; font-size: 20px; }
-        #btn-run { width: 60px; height: 60px; grid-column: 1; grid-row: 1; font-size: 20px; }
-        #btn-run.active { background: #4caf50; border-color: #81c784; }
-
-        #btn-fs {
-            position: absolute; top: 10px; right: 10px; width: 40px; height: 40px;
-            background: rgba(0,0,0,0.5); border: 1px solid white; border-radius: 5px;
-            color: white; font-size: 20px; display: flex; justify-content: center; align-items: center;
-            pointer-events: auto; z-index: 30; cursor: pointer;
-        }
-
-        #look-zone { position: absolute; top: 0; right: 0; width: 60%; height: 100%; pointer-events: auto; }
-
-        @media (hover: none) and (pointer: coarse) {
-            #mobile-controls { display: block; }
-            .pc-hint { display: none; }
+        body {
+            font-family: 'Sarabun', sans-serif;
         }
         
-        /* Overlays */
-        #blood-overlay, #flash-overlay { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; opacity: 0; transition: 0.1s; z-index: 15; }
-        #blood-overlay { background: radial-gradient(circle, transparent 50%, rgba(150,0,0,0.8) 100%); transition: 0.5s; }
-        #flash-overlay { background: white; }
+        /* Custom Animations */
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
         
-        #recover-msg {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: #ff4444; font-size: 2rem; font-weight: bold; text-shadow: 2px 2px 0 black;
-            display: none; z-index: 16;
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        
+        .animate-on-scroll.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .delay-100 { transition-delay: 100ms; }
+        .delay-200 { transition-delay: 200ms; }
+        .delay-300 { transition-delay: 300ms; }
+        
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+            background-color: #E5E7EB;
+            z-index: 0;
+        }
+        
+        /* Image Hover Effects for Story Section */
+        .story-img-container {
+            transition: transform 0.5s ease;
+        }
+        .story-img-container:hover {
+            transform: rotate(0deg) scale(1.02);
         }
     </style>
 </head>
-<body>
+<body class="bg-stone-50 text-gray-800 overflow-x-hidden">
 
-    <div id="game-container"></div>
-    <div id="blood-overlay"></div>
-    <div id="flash-overlay"></div>
-    <div id="recover-msg">เช็ดเลือด... (Recovering)</div>
-
-    <!-- MAIN MENU -->
-    <div id="menu" class="ui-layer">
-        <h1>Survival V</h1>
-        <div class="role-selector">
-            <div class="role-card selected" onclick="selectRole('survivor', this)">
-                <div style="font-size:3rem">🏃</div>
-                <h3>ผู้รอดชีวิต</h3>
-                <small>หนีตาย (2 HP)</small>
+    <!-- Navigation -->
+    <nav id="navbar" class="fixed w-full z-50 transition-all duration-300 py-4 text-white">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-10 h-10 bg-purple-700 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-md">
+                    น
+                </div>
+                <div>
+                    <h1 id="nav-title" class="font-bold text-lg leading-tight transition-colors">
+                        นาพละ
+                    </h1>
+                    <p id="nav-subtitle" class="text-xs text-purple-100 transition-colors">
+                        วิสาหกิจชุมชนนาข้าวแปลงใหญ่
+                    </p>
+                </div>
             </div>
-            <div class="role-card hunter-role" onclick="selectRole('hunter', this)">
-                <div style="font-size:3rem">👺</div>
-                <h3>ผู้ล่า</h3>
-                <small>ไล่ล่า (Attack)</small>
+
+            <!-- Desktop Menu -->
+            <div id="desktop-menu" class="hidden md:flex gap-8 transition-colors">
+                <a href="#home" class="hover:text-purple-400 transition-colors">หน้าแรก</a>
+                <a href="#about" class="hover:text-purple-400 transition-colors">ตำนานข้าว</a>
+                <a href="#product" class="hover:text-purple-400 transition-colors">สินค้าของเรา</a>
+                <a href="#process" class="hover:text-purple-400 transition-colors">กระบวนการ</a>
+                <a href="#activities" class="hover:text-purple-400 transition-colors">กิจกรรม</a>
+                <a href="#contact" class="px-4 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition-all transform hover:scale-105 shadow-lg flex items-center gap-2">
+                    ติดต่อเรา
+                </a>
+            </div>
+
+            <!-- Mobile Menu Button -->
+            <button id="menu-btn" class="md:hidden focus:outline-none text-white">
+                <i data-lucide="menu" class="w-7 h-7"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu" class="hidden absolute top-full left-0 w-full bg-white shadow-lg py-4 flex-col gap-4 px-6 md:hidden">
+            <a href="#home" class="mobile-link text-gray-700 py-2 border-b border-gray-100 block">หน้าแรก</a>
+            <a href="#about" class="mobile-link text-gray-700 py-2 border-b border-gray-100 block">ตำนานข้าว</a>
+            <a href="#product" class="mobile-link text-gray-700 py-2 border-b border-gray-100 block">สินค้าของเรา</a>
+            <a href="#process" class="mobile-link text-gray-700 py-2 border-b border-gray-100 block">กระบวนการ</a>
+            <a href="#activities" class="mobile-link text-gray-700 py-2 border-b border-gray-100 block">กิจกรรม</a>
+            <a href="#contact" class="mobile-link text-purple-700 font-bold py-2 block">ติดต่อเรา</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="relative h-screen flex items-center justify-center overflow-hidden">
+        <!-- Background Image with Overlay -->
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1536617621972-0604420b41ef?q=80&w=2070&auto=format&fit=crop" 
+                 alt="Rice Field" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-purple-900/40 to-black/30"></div>
+        </div>
+
+        <!-- Content -->
+        <div class="relative z-20 text-center px-4 max-w-4xl mx-auto">
+            <div class="inline-block px-4 py-1 border border-white/50 rounded-full text-white/90 text-sm mb-6 animate-on-scroll">
+                สินค้าสิ่งบ่งชี้ทางภูมิศาสตร์ (GI) ทะเบียนเลขที่ สช 66100212
+            </div>
+            <h1 class="text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-xl animate-on-scroll delay-100">
+                ข้าวเบายอดม่วงตรัง
+            </h1>
+            <p class="text-xl md:text-2xl text-purple-100 mb-8 max-w-2xl mx-auto italic animate-on-scroll delay-200">
+                "อัตลักษณ์แห่งรสชาติ มรดกจากผืนนาเมืองตรัง"
+            </p>
+            <div class="flex flex-col md:flex-row gap-4 justify-center animate-on-scroll delay-300">
+                <a href="#about" class="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full font-semibold transition-all transform hover:scale-105 shadow-purple-500/50 shadow-lg flex items-center justify-center gap-2">
+                    อ่านตำนานข้าว <i data-lucide="book-open" class="w-4 h-4"></i>
+                </a>
             </div>
         </div>
-        <div class="char-grid" id="char-options"></div>
-        <button class="start-btn" onclick="startGame()">START GAME</button>
-    </div>
+        
+        <!-- Scroll Down Indicator -->
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce text-white/70">
+            <div class="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center p-1">
+                <div class="w-1 h-3 bg-white rounded-full"></div>
+            </div>
+        </div>
+    </section>
 
-    <!-- HUD -->
-    <div id="hud">
-        <div id="mobile-controls">
-            <div id="btn-fs" onclick="toggleFullscreen()">⛶</div>
-            <div id="joystick-area" class="touch-zone"><div id="joystick-knob"></div></div>
-            <div id="look-zone"></div>
+    <!-- Storytelling Section (Revamped from About) -->
+    <section id="about" class="py-24 bg-stone-100 relative overflow-hidden">
+        <!-- Decorative Background -->
+        <div class="absolute top-0 right-0 w-1/2 h-full bg-purple-50/50 -z-10 rounded-l-full transform translate-x-1/3"></div>
+        
+        <div class="container mx-auto px-4">
+            <!-- The Hook Quote -->
+            <div class="max-w-4xl mx-auto text-center mb-20 animate-on-scroll">
+                <h2 class="text-3xl md:text-5xl font-bold text-gray-900 mb-8 leading-tight">
+                    "พัทลุงมีดอน นครมีท่า <br class="hidden md:inline" />
+                    <span class="text-purple-700 relative inline-block">
+                        ตรังมีนา
+                        <svg class="absolute w-full h-3 -bottom-1 left-0 text-yellow-400 opacity-60" viewBox="0 0 100 10" preserveAspectRatio="none">
+                            <path d="M0 5 Q 50 10 100 5" stroke="currentColor" stroke-width="8" fill="none" />
+                        </svg>
+                    </span> สงขลามีบ่อ"
+                </h2>
+                <p class="text-xl text-gray-600 italic font-light">
+                    คำกล่าวขานโบราณที่มิใช่เพียงคำคล้องจอง แต่คือหลักฐานแห่งความอุดมสมบูรณ์ของผืนนาเมืองตรัง แหล่งกำเนิดของข้าวพันธุ์พื้นเมืองอันเลื่องชื่อ
+                </p>
+            </div>
+
+            <!-- Story Chapter 1: Legacy -->
+            <div class="flex flex-col md:flex-row items-center gap-16 mb-24 animate-on-scroll delay-100">
+                <div class="md:w-1/2">
+                    <div class="story-img-container relative rounded-2xl overflow-hidden shadow-2xl rotate-2">
+                        <img src="https://images.unsplash.com/photo-1592321675773-2287796d8e8b?q=80&w=2070&auto=format&fit=crop" alt="ทุ่งนาโบราณ" class="w-full h-[450px] object-cover">
+                        <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/80 to-transparent">
+                            <span class="text-white font-bold text-lg border-l-4 border-yellow-400 pl-3">มรดกนับ 100 ปี</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="md:w-1/2 space-y-6">
+                    <div class="flex items-center gap-3 text-purple-700 font-bold uppercase tracking-wider text-sm">
+                        <span class="w-8 h-px bg-purple-700"></span>
+                        บทที่ 1 : รากเหง้า
+                    </div>
+                    <h3 class="text-4xl font-bold text-gray-900">จากป่าฝนสู่ผืนนา</h3>
+                    <p class="text-gray-600 text-lg leading-relaxed">
+                        "ข้าวเบายอดม่วง" ไม่ใช่เพียงข้าวทั่วไป แต่คือลมหายใจของชาวนาตรังที่สืบทอดกันมากว่าศตวรรษ เป็นข้าวพันธุ์พื้นเมืองดั้งเดิมที่หยั่งรากสู้แดนฝนเมืองใต้ ปรับตัวเข้ากับสภาพนิเวศป่าฝนเทือกเขาบรรทัดจนกลายเป็นเอกลักษณ์เฉพาะถิ่นที่ไม่สามารถลอกเลียนแบบได้
+                    </p>
+                    <blockquote class="border-l-4 border-gray-300 pl-4 italic text-gray-500">
+                        "ข้าวตรังสมัยก่อนที่มีรสชาติดีที่สุด คือ ข้าวเบายอดม่วง" — คำบอกเล่าจากผู้เฒ่าผู้แก่ในอำเภอปะเหลียน
+                    </blockquote>
+                </div>
+            </div>
+
+            <!-- Story Chapter 2: The Name & Wisdom -->
+            <div class="flex flex-col md:flex-row-reverse items-center gap-16 mb-24 animate-on-scroll delay-200">
+                <div class="md:w-1/2">
+                     <div class="story-img-container relative rounded-2xl overflow-hidden shadow-2xl -rotate-2">
+                        <img src="https://images.unsplash.com/photo-1586201375761-83865001e31c?q=80&w=2070&auto=format&fit=crop" alt="รวงข้าวสีม่วง" class="w-full h-[450px] object-cover">
+                        <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/80 to-transparent">
+                            <span class="text-white font-bold text-lg border-l-4 border-yellow-400 pl-3">ความลับของ "ยอดม่วง"</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="md:w-1/2 space-y-6">
+                    <div class="flex items-center gap-3 text-purple-700 font-bold uppercase tracking-wider text-sm">
+                         <span class="w-8 h-px bg-purple-700"></span>
+                        บทที่ 2 : ชื่อนั้นสำคัญไฉน
+                    </div>
+                    <h3 class="text-4xl font-bold text-gray-900">ทำไมต้อง "เบายอดม่วง"?</h3>
+                    <p class="text-gray-600 text-lg leading-relaxed">
+                        ชื่อนี้สะท้อนอัตลักษณ์อย่างแท้จริง <strong>"เบา"</strong> หมายถึงข้าวนาปีที่เก็บเกี่ยวเร็ว ส่วน <strong>"ยอดม่วง"</strong> มาจากปรากฏการณ์ธรรมชาติที่น่าทึ่ง เมื่อเปลือกเมล็ดข้าวแก่จัด จะเปลี่ยนจากสีเขียวเป็น <strong>สีม่วงเข้ม</strong> คล้ายกับสียอดอ่อนของมะม่วงเบา
+                    </p>
+                    <div class="bg-white p-6 rounded-xl border-l-4 border-purple-600 shadow-sm mt-4">
+                        <h4 class="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                            <i data-lucide="sparkles" class="text-yellow-500 w-5 h-5"></i> ภูมิปัญญา "แม่รวง"
+                        </h4>
+                        <p class="text-gray-600">
+                            เคล็ดลับความบริสุทธิ์ของสายพันธุ์อยู่ที่การคัดเลือกด้วยวิธี "แม่รวง" ชาวนาจะเลือกเก็บรวงข้าวที่สมบูรณ์ที่สุด จากหน่อแรกที่สูงที่สุดในกอ เพื่อเก็บไว้ทำพันธุ์ในปีถัดไป เป็นภูมิปัญญาที่ส่งต่อมารุ่นสู่รุ่น
+                        </p>
+                    </div>
+                </div>
+            </div>
             
-            <div id="action-area" class="touch-zone">
-                <div class="mob-btn" id="btn-interact">🖐️</div> <!-- Context: Vault/Drop -->
-                <div class="mob-btn" id="btn-main"></div> <!-- Attack or Main Action -->
-                <div class="mob-btn" id="btn-skill">⚡</div>
-                <div class="mob-btn" id="btn-run">🏃</div>
+            <!-- Story Chapter 3: Community Faith -->
+             <div class="flex flex-col md:flex-row items-center gap-16 animate-on-scroll delay-300">
+                <div class="md:w-1/2">
+                    <div class="story-img-container relative rounded-2xl overflow-hidden shadow-2xl rotate-2">
+                        <img src="https://images.unsplash.com/photo-1599579124479-7df9f8be5260?q=80&w=2070&auto=format&fit=crop" alt="วิถีชุมชน" class="w-full h-[450px] object-cover">
+                        <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/80 to-transparent">
+                            <span class="text-white font-bold text-lg border-l-4 border-yellow-400 pl-3">พลังศรัทธาชุมชน</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="md:w-1/2 space-y-6">
+                    <div class="flex items-center gap-3 text-purple-700 font-bold uppercase tracking-wider text-sm">
+                         <span class="w-8 h-px bg-purple-700"></span>
+                        บทที่ 3 : วิถีนาพละ
+                    </div>
+                    <h3 class="text-4xl font-bold text-gray-900">จากผืนนาสู่ศรัทธา</h3>
+                    <p class="text-gray-600 text-lg leading-relaxed">
+                        ณ ตำบลนาพละ ความผูกพันระหว่างคนกับข้าวหยั่งรากลึก สะท้อนผ่านประเพณี <strong>"รับขวัญข้าวใหม่"</strong> ที่ชาวนาจะนำข้าวที่เพิ่งเก็บเกี่ยวมาถวายบูชาพระรัตนตรัย เพื่อขอบคุณผืนดินและฟ้าฝน
+                    </p>
+                    <p class="text-gray-600 text-lg leading-relaxed">
+                         วิสาหกิจชุมชนนาข้าวแปลงใหญ่ตำบลนาพละ จึงไม่ใช่แค่ผู้ผลิต แต่คือผู้พิทักษ์วัฒนธรรม ที่มุ่งมั่นส่งต่อ "ข้าวที่มีชีวิต" และ "เรื่องราว" สู่จานอาหารของคุณ
+                    </p>
+                </div>
             </div>
         </div>
+    </section>
 
-        <div id="minimap-container">
-            <div id="mm-player" class="mm-dot"><div class="mm-arrow"></div></div>
-        </div>
-        <div id="health-display">❤️❤️</div> 
-        
-        <div class="status-area">
-            <div style="color:white; font-size: 2rem; font-weight:bold;" id="timer">120</div>
-            <div id="stamina-bar-bg"><div id="stamina-bar"></div></div>
-            <div style="color:#aaa; font-size: 0.8rem;">Skill: <span id="skill-name"></span> <span id="skill-status"></span></div>
-        </div>
-        
-        <div class="action-prompt" id="interaction-msg">SPACE</div>
-        <div class="pc-hint">
-            [CTRL] ซ่อนเมาส์<br>[W A S D] เดิน<br>[SPACE] ข้าม/พับไม้<br>[L-Click] โจมตี/ใช้มือ
-        </div>
-    </div>
+    <!-- Product Detail Section -->
+    <section id="product" class="py-20 bg-white relative">
+        <div class="container mx-auto px-4 relative z-10">
+            <div class="text-center mb-16 animate-on-scroll">
+                <span class="text-purple-600 font-bold tracking-wider uppercase text-sm">Product Detail</span>
+                <h2 class="text-4xl font-bold text-gray-900 mt-2">คุณค่าจากธรรมชาติ</h2>
+                <div class="w-24 h-1 bg-purple-500 mx-auto rounded-full mt-4"></div>
+            </div>
 
-    <!-- GAME OVER -->
-    <div id="game-over" class="ui-layer hidden">
-        <h1 id="go-title">...</h1>
-        <button class="start-btn" onclick="location.reload()">MAIN MENU</button>
-    </div>
+            <!-- Characteristics Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
+                <!-- Image & GI Tag -->
+                <div class="relative animate-on-scroll">
+                    <img src="https://images.unsplash.com/photo-1544252899-78c660cc1249?q=80&w=2000&auto=format&fit=crop" 
+                         alt="ข้าวเบายอดม่วง" 
+                         class="rounded-2xl shadow-2xl w-full h-[500px] object-cover">
+                    <div class="absolute top-4 right-4 bg-yellow-400 text-yellow-900 px-4 py-2 rounded-full font-bold shadow-lg flex items-center gap-2">
+                        <i data-lucide="award" class="w-5 h-5"></i> สินค้า GI ลำดับที่ 3 ของตรัง
+                    </div>
+                </div>
 
+                <!-- Info & Stats -->
+                <div class="space-y-8 animate-on-scroll delay-100">
+                    <!-- Physical Traits -->
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <i data-lucide="search" class="text-purple-600"></i> ลักษณะเด่นทางกายภาพ
+                        </h3>
+                        <div class="bg-purple-50 rounded-xl p-6 border border-purple-100">
+                            <ul class="space-y-4">
+                                <li class="flex items-start gap-3">
+                                    <span class="w-3 h-3 mt-2 bg-purple-700 rounded-full shrink-0"></span>
+                                    <div>
+                                        <span class="font-bold text-gray-800">ข้าวเปลือก:</span>
+                                        <span class="text-gray-600">สีฟางเข้ม ปลายเปลือกสีม่วงเข้ม</span>
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <span class="w-3 h-3 mt-2 bg-gradient-to-r from-red-700 to-white rounded-full shrink-0"></span>
+                                    <div>
+                                        <span class="font-bold text-gray-800">ข้าวสาร 2 สีในหนึ่งเดียว:</span>
+                                        <span class="text-gray-600">มีทั้งเมล็ดสีขาวขุ่นและสีแดง ผสมผสานรสสัมผัสที่ลงตัว</span>
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <span class="w-3 h-3 mt-2 bg-orange-400 rounded-full shrink-0"></span>
+                                    <div>
+                                        <span class="font-bold text-gray-800">รสสัมผัส:</span>
+                                        <span class="text-gray-600">เหนียวนุ่ม มันวาว ไม่กรุบกระด้าง รสชาติดีและหอม</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Nutrition Stats -->
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <i data-lucide="activity" class="text-green-600"></i> คุณค่าทางโภชนาการ
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                                <div class="text-3xl font-bold text-green-600 mb-1">2.45 <span class="text-sm text-gray-500 font-normal">mg/g</span></div>
+                                <div class="text-sm font-semibold text-gray-700">สารฟีนอลิก (Phenolic)</div>
+                                <div class="text-xs text-gray-500 mt-2">ช่วยต้านอนุมูลอิสระ</div>
+                            </div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                                <div class="text-3xl font-bold text-purple-600 mb-1">66.67<span class="text-sm text-gray-500 font-normal">%</span></div>
+                                <div class="text-sm font-semibold text-gray-700">การต้านอนุมูลอิสระ</div>
+                                <div class="text-xs text-gray-500 mt-2">ป้องกันโรคหลอดเลือดหัวใจ</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Processed Products -->
+            <div class="bg-stone-50 rounded-2xl p-8 animate-on-scroll">
+                <h3 class="text-2xl font-bold text-center mb-8">ผลิตภัณฑ์แปรรูปจากชุมชน</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                    <div class="group cursor-pointer">
+                        <div class="w-20 h-20 mx-auto bg-white rounded-full shadow-md flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-purple-100 transition-all">
+                            <i data-lucide="cookie" class="w-8 h-8 text-orange-500"></i>
+                        </div>
+                        <span class="font-medium text-gray-700">คุกกี้แป้งข้าว</span>
+                    </div>
+                    <div class="group cursor-pointer">
+                        <div class="w-20 h-20 mx-auto bg-white rounded-full shadow-md flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-purple-100 transition-all">
+                            <i data-lucide="cake-slice" class="w-8 h-8 text-pink-500"></i>
+                        </div>
+                        <span class="font-medium text-gray-700">เค้กข้าวเบายอดม่วง</span>
+                    </div>
+                    <div class="group cursor-pointer">
+                        <div class="w-20 h-20 mx-auto bg-white rounded-full shadow-md flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-purple-100 transition-all">
+                            <i data-lucide="glass-water" class="w-8 h-8 text-blue-500"></i>
+                        </div>
+                        <span class="font-medium text-gray-700">น้ำข้าวเบายอดม่วง</span>
+                    </div>
+                    <div class="group cursor-pointer">
+                        <div class="w-20 h-20 mx-auto bg-white rounded-full shadow-md flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-purple-100 transition-all">
+                            <i data-lucide="utensils" class="w-8 h-8 text-green-500"></i>
+                        </div>
+                        <span class="font-medium text-gray-700">ซูชิ (เมนูอนาคต)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Process Timeline Section -->
+    <section id="process" class="py-20 bg-stone-900 text-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16 animate-on-scroll">
+                <h2 class="text-3xl font-bold">กระบวนการผลิตที่ใส่ใจ</h2>
+                <p class="text-gray-400 mt-2">ตามมาตรฐานสิ่งบ่งชี้ทางภูมิศาสตร์ (GI)</p>
+            </div>
+
+            <div class="relative max-w-4xl mx-auto">
+                <div class="timeline-line hidden md:block bg-stone-700"></div>
+                
+                <!-- Step 1 -->
+                <div class="relative flex flex-col md:flex-row items-center gap-8 mb-12 animate-on-scroll delay-100">
+                    <div class="md:w-1/2 text-center md:text-right order-2 md:order-1">
+                        <h3 class="text-xl font-bold text-purple-400">การเตรียมพันธุ์และดิน</h3>
+                        <p class="text-sm text-gray-300 mt-2">เลือกเมล็ดพันธุ์คุณภาพจากแหล่งที่น่าเชื่อถือ เตรียมดินด้วยการไถดะ ไถแปร เพื่อปรับสภาพดินให้เหมาะสม</p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center z-10 shrink-0 border-4 border-stone-800 order-1 md:order-2">
+                        <span class="font-bold">1</span>
+                    </div>
+                    <div class="md:w-1/2 order-3 text-gray-500 text-sm hidden md:block">
+                        ดินเหนียวและดินร่วนปนทราย
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="relative flex flex-col md:flex-row items-center gap-8 mb-12 animate-on-scroll delay-200">
+                    <div class="md:w-1/2 text-gray-500 text-sm text-right hidden md:block order-1">
+                        วิธี: ปักดำ, หว่านน้ำตม, หยอดข้าวแห้ง
+                    </div>
+                    <div class="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center z-10 shrink-0 border-4 border-stone-800 order-1 md:order-2">
+                        <span class="font-bold">2</span>
+                    </div>
+                    <div class="md:w-1/2 text-center md:text-left order-2 md:order-3">
+                        <h3 class="text-xl font-bold text-purple-400">ฤดูกาลปลูก</h3>
+                        <p class="text-sm text-gray-300 mt-2">
+                            <span class="block">• ปักดำ/หว่าน: สิงหาคม - กันยายน</span>
+                            <span class="block">• หยอดข้าวแห้ง: มิถุนายน - กรกฎาคม</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="relative flex flex-col md:flex-row items-center gap-8 mb-12 animate-on-scroll delay-300">
+                    <div class="md:w-1/2 text-center md:text-right order-2 md:order-1">
+                        <h3 class="text-xl font-bold text-purple-400">การดูแลรักษา</h3>
+                        <p class="text-sm text-gray-300 mt-2">ควบคุมระดับน้ำ 10-30 ซม. ใส่ปุ๋ยบำรุงตามระยะ กำจัดวัชพืชด้วยวิธีที่ไม่ส่งผลเสียต่อข้าว</p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center z-10 shrink-0 border-4 border-stone-800 order-1 md:order-2">
+                        <span class="font-bold">3</span>
+                    </div>
+                    <div class="md:w-1/2 order-3 hidden md:block"></div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="relative flex flex-col md:flex-row items-center gap-8 animate-on-scroll">
+                    <div class="md:w-1/2 hidden md:block order-1"></div>
+                    <div class="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center z-10 shrink-0 border-4 border-stone-800 order-1 md:order-2">
+                        <span class="font-bold">4</span>
+                    </div>
+                    <div class="md:w-1/2 text-center md:text-left order-2 md:order-3">
+                        <h3 class="text-xl font-bold text-green-400">การเก็บเกี่ยว</h3>
+                        <p class="text-sm text-gray-300 mt-2">
+                             ช่วงมกราคม - กุมภาพันธ์ (สำหรับนาดำ) เก็บเกี่ยวเมื่อข้าวสุกแก่เต็มที่ นวดและลดความชื้นไม่เกิน 15%
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Awards & Community Section -->
+    <section id="awards" class="py-20 bg-stone-100">
+        <div class="container mx-auto px-4">
+             <div class="text-center mb-12 animate-on-scroll">
+                <h2 class="text-3xl font-bold text-gray-900">รางวัลและความภาคภูมิใจ</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-lg text-center border-t-4 border-yellow-500 animate-on-scroll hover:transform hover:-translate-y-2 transition-transform duration-300">
+                    <i data-lucide="award" class="w-12 h-12 mx-auto text-yellow-500 mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2">มาตรฐาน GAP</h3>
+                    <p class="text-gray-600 text-sm">ได้รับการรับรองการปฏิบัติทางการเกษตรที่ดี (Good Agricultural Practices)</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg text-center border-t-4 border-purple-500 animate-on-scroll delay-100 hover:transform hover:-translate-y-2 transition-transform duration-300">
+                    <i data-lucide="ribbon" class="w-12 h-12 mx-auto text-purple-500 mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2">สิ่งบ่งชี้ทางภูมิศาสตร์ (GI)</h3>
+                    <p class="text-gray-600 text-sm">ขึ้นทะเบียนเมื่อ 14 กันยายน 2565 ทะเบียนเลขที่ สช 66100212</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg text-center border-t-4 border-green-500 animate-on-scroll delay-200 hover:transform hover:-translate-y-2 transition-transform duration-300">
+                    <i data-lucide="sprout" class="w-12 h-12 mx-auto text-green-500 mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2">รางวัลเมล็ดพันธุ์ดี</h3>
+                    <p class="text-gray-600 text-sm">รางวัลรองชนะเลิศอันดับ 2 การประกวดเมล็ดพันธุ์ข้าวคุณภาพ</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Activities Section -->
+    <section id="activities" class="py-20 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-end mb-12 animate-on-scroll">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900 mt-2">กิจกรรมและประเพณี</h2>
+                    <p class="text-gray-500">สืบสานวัฒนธรรมท้องถิ่นชาวนาพละ</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Activity 1 -->
+                <div class="bg-stone-50 rounded-2xl overflow-hidden shadow-lg animate-on-scroll hover:shadow-xl transition-shadow">
+                    <img src="....." 
+                         alt="รับขวัญข้าวใหม่" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <div class="text-purple-600 text-xs font-bold mb-2">กุมภาพันธ์ - มีนาคม</div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">ประเพณีทำบุญรับขวัญข้าวใหม่</h3>
+                        <p class="text-gray-600 text-sm">ชาวนานำข้าวใหม่ที่เก็บเกี่ยวแล้วไปถวายบูชาแด่พระพุทธ พระธรรม พระสงฆ์ เพื่อความเป็นสิริมงคล</p>
+                    </div>
+                </div>
+                 <!-- Activity 2 -->
+                 <div class="bg-stone-50 rounded-2xl overflow-hidden shadow-lg animate-on-scroll delay-100 hover:shadow-xl transition-shadow">
+                    <img src="......." 
+                         alt="ลากพระ" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <div class="text-purple-600 text-xs font-bold mb-2">ตุลาคม</div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">ประเพณีลากพระ</h3>
+                        <p class="text-gray-600 text-sm">ร่วมสืบสานประเพณีลากพระและวัฒนธรรมสัมพันธ์ พร้อมกิจกรรมบุญเดือนสิบ</p>
+                    </div>
+                </div>
+                 <!-- Activity 3 -->
+                 <div class="bg-stone-50 rounded-2xl overflow-hidden shadow-lg animate-on-scroll delay-200 hover:shadow-xl transition-shadow">
+                    <img src="........" 
+                         alt="แหล่งเรียนรู้" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <div class="text-purple-600 text-xs font-bold mb-2">ตลอดปี</div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">ศูนย์เรียนรู้ชุมชน</h3>
+                        <p class="text-gray-600 text-sm">เป็นแหล่งเรียนรู้การทำนาแบบประณีต และการแปรรูปข้าว ต้อนรับคณะศึกษาดูงานจากทั่วประเทศ</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-stone-900 text-stone-400 py-16">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+                <div>
+                    <h4 class="text-white text-xl font-bold mb-6">นาพละ</h4>
+                    <p class="mb-6 text-sm italic">
+                        "แผ่นดินศรีวิชัย เลื่อมใสพระพุทธสิหิงค์ ข้าวตรังงามจริง นาพละยิ่งเจริญไกล"
+                    </p>
+                    <div class="flex gap-4">
+                        <a href="#" class="w-10 h-10 rounded-full bg-stone-800 flex items-center justify-center hover:bg-purple-600 hover:text-white transition-all">
+                            <i data-lucide="facebook" class="w-5 h-5"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-white text-lg font-bold mb-6">ติดต่อเรา</h4>
+                    <ul class="space-y-4 text-sm">
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="user" class="mt-1 text-purple-500 w-5 h-5 shrink-0"></i>
+                            <span>นางกุหลาบ หนูเริก (ประธานกลุ่ม)</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="map-pin" class="mt-1 text-purple-500 w-5 h-5 shrink-0"></i>
+                            <span>32/3 หมู่ที่ 9 ตำบลนาพละ อำเภอเมืองตรัง จังหวัดตรัง 92000</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i data-lucide="phone" class="text-purple-500 w-5 h-5 shrink-0"></i>
+                            <span>089-645-1814</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white text-lg font-bold mb-6">ลิงก์ด่วน</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#home" class="hover:text-purple-400 transition-colors">หน้าแรก</a></li>
+                        <li><a href="#about" class="hover:text-purple-400 transition-colors">ตำนานข้าว</a></li>
+                        <li><a href="#product" class="hover:text-purple-400 transition-colors">สินค้าของเรา</a></li>
+                        <li><a href="#activities" class="hover:text-purple-400 transition-colors">กิจกรรม</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white text-lg font-bold mb-6">แผนที่</h4>
+                    <div class="w-full h-40 bg-stone-800 rounded-lg flex items-center justify-center border border-stone-700 overflow-hidden relative group cursor-pointer">
+                        <div class="absolute inset-0 bg-stone-700 group-hover:bg-stone-600 transition-colors flex items-center justify-center">
+                            <i data-lucide="map" class="text-stone-400 w-8 h-8"></i>
+                        </div>
+                        <span class="relative z-10 text-xs text-stone-300 group-hover:text-white transition-colors">คลิกเพื่อดูแผนที่</span>
+                    </div>
+                </div>
+            </div>
+            
+            
+        </div>
+    </footer>
+
+    <!-- JavaScript logic -->
     <script>
-        // --- AUDIO ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(type) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            const now = audioCtx.currentTime;
-            
-            if (type === 'hit') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(50, now+0.2);
-                gain.gain.setValueAtTime(0.5, now); gain.gain.linearRampToValueAtTime(0, now+0.2);
-                osc.start(); osc.stop(now+0.2);
-            } else if (type === 'action') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(200, now); osc.frequency.linearRampToValueAtTime(100, now+0.1);
-                gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0, now+0.2);
-                osc.start(); osc.stop(now+0.2);
-            } else if (type === 'pallet') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(80, now); osc.frequency.exponentialRampToValueAtTime(20, now+0.2);
-                gain.gain.setValueAtTime(0.6, now); gain.gain.linearRampToValueAtTime(0, now+0.2);
-                osc.start(); osc.stop(now+0.2);
-            } else if (type === 'heartbeat') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(60, now); osc.frequency.exponentialRampToValueAtTime(40, now+0.1);
-                gain.gain.setValueAtTime(0.4, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.1);
-                osc.start(); osc.stop(now+0.15);
-            }
-        }
+        // Initialize Icons
+        lucide.createIcons();
 
-        // --- STATE ---
-        const config = { role: 'survivor', char: 'mercenary' };
-        const state = { playing: false, time: 120, stamina: 100, skillCd: 0, speedBuff: 1.0, isVaulting: false, isAttacking: false, isRecovering: false, lastTime: 0 };
-        const touchInput = { x: 0, y: 0, run: false };
-        let joyTouchId = null, lookTouchId = null, lastLookX = 0;
+        // Navbar Scroll Effect
+        const navbar = document.getElementById('navbar');
+        const navTitle = document.getElementById('nav-title');
+        const navSubtitle = document.getElementById('nav-subtitle');
+        const desktopMenu = document.getElementById('desktop-menu');
+        
+        window.addEventListener('scroll', () => {
+            const menuBtnIcon = document.querySelector('#menu-btn svg') || document.querySelector('#menu-btn i');
+            const menuBtnIconWrapper = document.getElementById('menu-btn');
 
-        let scene, camera, renderer, player;
-        let aiAgents = [], walls = [], pallets = [], windows = [], particles = [];
-        let keys = {};
-
-        // --- INIT ---
-        function init() {
-            updateCharOptions();
-            const container = document.getElementById('game-container');
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x151525);
-            scene.fog = new THREE.Fog(0x151525, 10, 60);
-
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            container.appendChild(renderer.domElement);
-
-            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-            const moon = new THREE.DirectionalLight(0xaaccff, 0.7);
-            moon.position.set(30, 50, 30); moon.castShadow = true; scene.add(moon);
-
-            window.addEventListener('resize', onResize);
-            window.addEventListener('keydown', e => { keys[e.code] = true; if(e.code==='Space') tryInteract(); if(e.code==='KeyE') useSkill(); });
-            window.addEventListener('keyup', e => keys[e.code] = false);
-            
-            // Mouse Look (PC)
-            document.addEventListener('mousemove', e => {
-                if(state.playing && document.pointerLockElement && !state.isVaulting) {
-                    player.rotation.y -= e.movementX * 0.003;
-                }
-            });
-            document.addEventListener('click', () => {
-                // Lock only if not mobile
-                if(state.playing && !document.pointerLockElement && window.innerWidth > 768) container.requestPointerLock();
-                if(state.playing && config.role === 'hunter' && window.innerWidth > 768) attack();
-            });
-
-            initMobileControls();
-            requestAnimationFrame(animate);
-        }
-
-        // --- MOBILE INPUT ---
-        function initMobileControls() {
-            const joyArea = document.getElementById('joystick-area');
-            const joyKnob = document.getElementById('joystick-knob');
-            const lookZone = document.getElementById('look-zone');
-
-            // Joystick (Multitouch safe)
-            joyArea.addEventListener('touchstart', e => { e.preventDefault(); joyTouchId = e.changedTouches[0].identifier; handleJoy(e.changedTouches[0], joyArea, joyKnob); });
-            joyArea.addEventListener('touchmove', e => { e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) if(e.changedTouches[i].identifier === joyTouchId) handleJoy(e.changedTouches[i], joyArea, joyKnob); });
-            joyArea.addEventListener('touchend', e => { e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) if(e.changedTouches[i].identifier === joyTouchId) { joyTouchId = null; resetJoy(joyKnob); } });
-
-            // Look (High Sensitivity)
-            lookZone.addEventListener('touchstart', e => { e.preventDefault(); lookTouchId = e.changedTouches[0].identifier; lastLookX = e.changedTouches[0].clientX; });
-            lookZone.addEventListener('touchmove', e => {
-                e.preventDefault();
-                for(let i=0; i<e.changedTouches.length; i++) {
-                    if(e.changedTouches[i].identifier === lookTouchId) {
-                        const dx = e.changedTouches[i].clientX - lastLookX;
-                        lastLookX = e.changedTouches[i].clientX;
-                        if(state.playing && !state.isVaulting) player.rotation.y -= dx * 0.02; // Increased sensitivity
-                    }
-                }
-            });
-            lookZone.addEventListener('touchend', e => { e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) if(e.changedTouches[i].identifier === lookTouchId) lookTouchId = null; });
-
-            // Buttons
-            const bind = (id, fn) => document.getElementById(id).addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); fn(); });
-            bind('btn-main', () => { if(config.role==='hunter') attack(); else tryInteract(); });
-            bind('btn-interact', tryInteract);
-            bind('btn-skill', useSkill);
-            bind('btn-run', () => { 
-                touchInput.run = !touchInput.run; 
-                document.getElementById('btn-run').classList.toggle('active', touchInput.run); 
-            });
-        }
-
-        function handleJoy(touch, area, knob) {
-            const rect = area.getBoundingClientRect();
-            const cx = rect.left + rect.width/2;
-            const cy = rect.top + rect.height/2;
-            let dx = touch.clientX - cx; let dy = touch.clientY - cy;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            const max = rect.width/2;
-            if (dist > max) { dx = (dx/dist)*max; dy = (dy/dist)*max; }
-            knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-            touchInput.x = dx / max; touchInput.y = dy / max;
-        }
-        function resetJoy(knob) { knob.style.transform = `translate(-50%, -50%)`; touchInput.x = 0; touchInput.y = 0; }
-
-        // --- GAMEPLAY ---
-        function startGame() {
-            document.getElementById('menu').classList.add('hidden');
-            document.getElementById('hud').style.display = 'block';
-            
-            // Configure Mobile Buttons
-            const mainBtn = document.getElementById('btn-main');
-            if(config.role === 'survivor') {
-                mainBtn.innerText = '🏃'; // Default action is run? No, interact mainly
-                mainBtn.style.display = 'none'; // Survivor main action is interact (separate button)
-            } else {
-                mainBtn.innerText = '⚔️'; 
-                mainBtn.classList.add('hunter-atk');
-                mainBtn.style.display = 'flex';
-            }
-
-            while(scene.children.length > 0) scene.remove(scene.children[0]);
-            particles = [];
-            
-            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-            const moon = new THREE.DirectionalLight(0xaaccff, 0.8);
-            moon.position.set(30, 50, 30); moon.castShadow = true; scene.add(moon);
-
-            createMap();
-            spawnCharacters();
-            
-            state.playing = true; state.time = 120; state.stamina = 100; state.speedBuff = 1.0;
-            state.isRecovering = false; state.isAttacking = false; state.isVaulting = false;
-            updateHealthUI();
-            
-            const names = {'mercenary':'Dash', 'doctor':'Heal', 'thief':'Flash', 'ripper':'Speed', 'clown':'Charge'};
-            document.getElementById('skill-name').innerText = names[config.char] || 'Skill';
-        }
-
-        // --- OBJECTS ---
-        function createMap() {
-            walls = []; pallets = []; windows = [];
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), new THREE.MeshStandardMaterial({ color: 0x333344 }));
-            floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
-
-            const mapStr = [
-                "111111111111111", "100000000000001", "101110101111101", "100000100000001", "111P101W1111101",
-                "100000000000001", "101111101P11101", "100000001000001", "1011W1101011101", "100000100000001",
-                "11111011101P111", "100000000000001", "111111111111111"
-            ];
-            const u = 6;
-            const wMat = new THREE.MeshStandardMaterial({ color: 0x555566 });
-            
-            for(let z=0; z<mapStr.length; z++) {
-                for(let x=0; x<mapStr[z].length; x++) {
-                    const c = mapStr[z][x];
-                    const px = (x-7)*u, pz = (z-6)*u;
-                    if(c==='1') {
-                        const w = new THREE.Mesh(new THREE.BoxGeometry(u,6,u), wMat);
-                        w.position.set(px,3,pz); scene.add(w); walls.push(w);
-                    } else if(c==='P') {
-                        const p = new THREE.Mesh(new THREE.BoxGeometry(1.2,4,3), new THREE.MeshStandardMaterial({color:0x8d6e63}));
-                        p.position.set(px,2,pz); p.userData={isPallet:true,dropped:false}; scene.add(p); pallets.push(p);
-                        const sw = new THREE.Mesh(new THREE.BoxGeometry(u/3,6,u/3), wMat);
-                        sw.position.set(px-u/2.5,3,pz); scene.add(sw); walls.push(sw);
-                        const sw2 = sw.clone(); sw2.position.set(px+u/2.5,3,pz); scene.add(sw2); walls.push(sw2);
-                    } else if(c==='W') {
-                        const wb = new THREE.Mesh(new THREE.BoxGeometry(u,2,u/2), wMat);
-                        wb.position.set(px,1,pz); scene.add(wb); walls.push(wb);
-                        windows.push({position: new THREE.Vector3(px,1,pz)});
-                    }
-                }
-            }
-        }
-
-        function createChar(col, scl, isH) {
-            const g = new THREE.Group();
-            const mat = new THREE.MeshStandardMaterial({ color: col, emissive: isH?0x000000:0x004400, emissiveIntensity:0.5 });
-            const b = new THREE.Mesh(new THREE.BoxGeometry(1,2,0.6), mat); b.position.y=1; g.add(b);
-            const h = new THREE.Mesh(new THREE.BoxGeometry(0.6,0.6,0.6), new THREE.MeshStandardMaterial({color:0xffccaa})); h.position.y=2.4; g.add(h);
-            g.scale.set(scl,scl,scl);
-            g.userData = { hp:2, invul:0, recovery:0, lastPos:new THREE.Vector3(), stuckTime:0 };
-            
-            if(isH) {
-                const l = new THREE.SpotLight(0xff0000, 5, 20, Math.PI/4, 0.5);
-                l.position.set(0,3,0.5); l.target.position.set(0,0,10); g.add(l); g.add(l.target);
-            }
-            return g;
-        }
-
-        function spawnCharacters() {
-            aiAgents = [];
-            const mmC = document.getElementById('minimap-container');
-            mmC.querySelectorAll('.mm-dot:not(#mm-player)').forEach(d => d.remove());
-
-            if(config.role === 'survivor') {
-                player = createChar(0x00ff00, 0.8, false); setSafePos(player, 0, 30);
-                const hunter = createChar(0xff0000, 1.2, true); setSafePos(hunter, 0, -30);
-                Object.assign(hunter.userData, {role:'hunter', speed:12, aiAction:0});
-                scene.add(hunter); aiAgents.push(hunter); addMMDot(hunter, 'mm-hunter');
-            } else {
-                player = createChar(0xff0000, 1.2, true); setSafePos(player, 0, -30);
-                for(let i=0; i<3; i++) {
-                    const s = createChar(0x00ff00, 0.8, false); setSafePos(s, (Math.random()-0.5)*40, (Math.random()-0.5)*40);
-                    Object.assign(s.userData, {role:'survivor', speed:9.5, wander:new THREE.Vector3(), aiAction:0});
-                    scene.add(s); aiAgents.push(s); addMMDot(s, 'mm-survivor');
-                }
-            }
-            scene.add(player);
-        }
-
-        function setSafePos(agent, x, z) {
-            agent.position.set(x,0,z);
-            let n=0; while(checkCol(agent.position, agent.userData.role==='hunter') && n<200) {
-                agent.position.x = (Math.random()-0.5)*80; agent.position.z = (Math.random()-0.5)*80; n++;
-            }
-        }
-
-        function addMMDot(agent, cls) {
-            const d = document.createElement('div'); d.className = `mm-dot ${cls}`;
-            document.getElementById('minimap-container').appendChild(d);
-            agent.userData.dot = d;
-        }
-
-        function checkCol(pos, isH) {
-            const r = isH ? 0.7 : 0.4;
-            const pb = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(pos.x, 1, pos.z), new THREE.Vector3(r*2, 2, r*2));
-            for(let w of walls) if(pb.intersectsBox(new THREE.Box3().setFromObject(w))) return true;
-            for(let p of pallets) if(p.userData.dropped && pb.intersectsBox(new THREE.Box3().setFromObject(p))) return true;
-            return false;
-        }
-
-        function forceUnstuck(agent) {
-            const dirs = [
-                new THREE.Vector3(1,0,0), new THREE.Vector3(-1,0,0), new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,-1),
-                new THREE.Vector3(1,0,1), new THREE.Vector3(-1,0,1), new THREE.Vector3(1,0,-1), new THREE.Vector3(-1,0,-1)
-            ];
-            for(let d of dirs) {
-                const t = agent.position.clone().add(d.normalize().multiplyScalar(1.5));
-                if(!checkCol(t, agent.userData.role==='hunter')) { agent.position.copy(t); return; }
-            }
-            setSafePos(agent, 0, 0); // Fallback
-        }
-
-        // --- INTERACTIONS ---
-        function tryInteract() {
-            if(state.isVaulting || state.isAttacking || state.isRecovering) return;
-            
-            // Pallet
-            for(let p of pallets) {
-                if(player.position.distanceTo(p.position) < 3.5) {
-                    if(config.role === 'survivor') {
-                        if(!p.userData.dropped) {
-                            p.rotation.z = Math.PI/2; p.position.y=0.5; p.userData.dropped=true;
-                            playSound('pallet');
-                            // Push player if caught
-                            if(checkCol(player.position, false)) {
-                                const push = player.position.clone().sub(p.position).normalize().multiplyScalar(2);
-                                player.position.add(push);
-                            }
-                        } else performVault(player, p.position);
-                    } else {
-                        if(p.userData.dropped) {
-                            playSound('action'); state.isBreaking = true;
-                            setTimeout(()=>{ scene.remove(p); state.isBreaking = false; }, 1000);
-                        }
-                    }
-                    return;
-                }
-            }
-            // Window
-            for(let w of windows) {
-                if(player.position.distanceTo(w.position) < 3.0) { performVault(player, w.position); return; }
-            }
-        }
-
-        function performVault(agent, target) {
-            if(agent.userData.isVaulting) return;
-            agent.userData.isVaulting = true;
-            if(agent === player) state.isVaulting = true;
-            playSound('action');
-            
-            const dir = new THREE.Vector3().subVectors(target, agent.position).normalize(); dir.y=0;
-            const start = agent.position.clone();
-            const end = target.clone().add(dir.multiplyScalar(3.0));
-            let p = 0;
-            const iv = setInterval(() => {
-                p+=0.1; agent.position.lerpVectors(start, end, p); agent.position.y = Math.sin(p*Math.PI)*1.5;
-                if(p>=1) { 
-                    clearInterval(iv); agent.position.y=0; 
-                    agent.userData.isVaulting=false; 
-                    if(agent===player) state.isVaulting=false; 
-                }
-            }, 30);
-        }
-
-        function attack() {
-            if(state.isAttacking || state.isRecovering) return;
-            state.isAttacking = true;
-            
-            // Lunge
-            const startZ = player.children[0].position.z; 
-            player.children[0].position.z += 0.5; 
-            
-            // Hit check
-            let hit = false;
-            const fwd = new THREE.Vector3(0,0,1).applyQuaternion(player.quaternion);
-            for(let a of aiAgents) {
-                if(player.position.distanceTo(a.position) < 4 && fwd.dot(a.position.clone().sub(player.position).normalize()) > 0.5) {
-                    playSound('hit'); hit = true;
-                    a.userData.hp--;
-                    // Effect
-                    const f = document.getElementById('flash-overlay');
-                    f.style.backgroundColor = 'red'; f.style.opacity = 0.5;
-                    setTimeout(()=>f.style.opacity=0, 200);
-                    
-                    if(a.userData.hp <= 0) {
-                        scene.remove(a); a.userData.dot.remove();
-                        aiAgents = aiAgents.filter(ag=>ag!==a);
-                    } else {
-                        // Injured speed burst
-                        a.userData.speedBurst = 1.5; setTimeout(()=>a.userData.speedBurst=1, 2000);
-                        a.children[0].material.color.setHex(0x550000);
-                    }
-                }
-            }
-            
-            if(hit) {
-                state.isRecovering = true;
-                document.getElementById('recover-msg').style.display = 'block';
-                setTimeout(() => {
-                    state.isRecovering = false;
-                    document.getElementById('recover-msg').style.display = 'none';
-                }, 2000); // Blade Wipe
-            } else {
-                playSound('action'); // Miss swing sound
-            }
-
-            setTimeout(()=> { player.children[0].position.z = startZ; state.isAttacking=false; }, 800);
-        }
-
-        function useSkill() {
-            if(state.skillCd > 0) return;
-            state.skillCd = 12;
-            playSound('action');
-            if(config.char === 'mercenary' || config.char === 'clown') {
-                const iv = setInterval(()=> {
-                    const fwd = new THREE.Vector3(0,0,1).applyQuaternion(player.quaternion);
-                    const n = player.position.clone().add(fwd.multiplyScalar(1.2));
-                    if(!checkCol(n, config.role==='hunter')) player.position.copy(n);
-                }, 20);
-                setTimeout(()=>clearInterval(iv), 300);
-            } else if (config.char === 'doctor') {
-                player.userData.hp = 2; updateHealthUI();
-            }
-        }
-
-        // --- MAIN LOOP ---
-        function animate(time) {
-            requestAnimationFrame(animate); renderer.render(scene, camera);
-            if(!state.playing) return;
-            const dt = (time - state.lastTime)/1000 || 0.016; state.lastTime = time;
-            
-            // Timer
-            state.time -= dt;
-            document.getElementById('timer').innerText = Math.ceil(state.time);
-            if(state.time <= 0 || (config.role==='hunter' && aiAgents.length===0)) gameOver(config.role==='survivor');
-
-            // Skill CD
-            if(state.skillCd > 0) state.skillCd -= dt;
-
-            // Player Move
-            if(!state.isVaulting && !state.isAttacking && !state.isRecovering && !state.isBreaking) {
-                let speed = (config.role==='hunter'?12:10) * dt * state.speedBuff;
-                if((keys['ShiftLeft'] || touchInput.run) && state.stamina > 0) { speed *= 1.5; state.stamina -= 10*dt; }
+            if (window.scrollY > 50) {
+                navbar.classList.add('bg-white', 'shadow-md', 'py-2');
+                navbar.classList.remove('bg-transparent', 'py-4', 'text-white');
+                navbar.classList.add('text-gray-800');
                 
-                let ix = 0, iy = 0;
-                if(keys['KeyW']) iy += 1; if(keys['KeyS']) iy -= 1;
-                if(keys['KeyA']) ix += 1; if(keys['KeyD']) ix -= 1;
-                if(touchInput.x !== 0 || touchInput.y !== 0) { ix -= touchInput.x; iy -= touchInput.y; }
-
-                if(ix !== 0 || iy !== 0) {
-                    const fwd = new THREE.Vector3(0,0,1).applyQuaternion(player.quaternion);
-                    const right = new THREE.Vector3(-1,0,0).applyQuaternion(player.quaternion);
-                    const move = new THREE.Vector3().add(fwd.multiplyScalar(iy)).add(right.multiplyScalar(ix)).normalize().multiplyScalar(speed);
-                    
-                    const next = player.position.clone().add(move);
-                    if(!checkCol(next, config.role==='hunter')) player.position.copy(next);
-                    else {
-                        // Slide
-                        const sx = player.position.clone().add(new THREE.Vector3(move.x,0,0));
-                        if(!checkCol(sx, config.role==='hunter')) player.position.copy(sx);
-                        else {
-                            const sz = player.position.clone().add(new THREE.Vector3(0,0,move.z));
-                            if(!checkCol(sz, config.role==='hunter')) player.position.copy(sz);
-                        }
-                    }
-                }
-            }
-
-            // Camera
-            const offset = new THREE.Vector3(0, 5, -6).applyQuaternion(player.quaternion);
-            camera.position.lerp(player.position.clone().add(offset), 0.2);
-            camera.lookAt(player.position.clone().add(new THREE.Vector3(0,2,0)));
-
-            updateAI(dt); updateUI();
-        }
-
-        function updateAI(dt) {
-            aiAgents.forEach(a => {
-                if(a.userData.isVaulting) return;
+                navTitle.classList.add('text-purple-900');
+                navSubtitle.classList.remove('text-purple-100');
+                navSubtitle.classList.add('text-purple-700');
                 
-                // Stuck Check
-                if(a.position.distanceTo(a.userData.lastPos) < 0.05) a.userData.stuckTime += dt;
-                else a.userData.stuckTime = 0;
-                a.userData.lastPos.copy(a.position);
-                if(a.userData.stuckTime > 0.5) { forceUnstuck(a); a.userData.stuckTime = 0; a.userData.wander = null; }
+                desktopMenu.classList.remove('text-white');
+                desktopMenu.classList.add('text-gray-600');
 
-                // Basic Logic
-                const speed = a.userData.speed * dt * (a.userData.speedBurst || 1);
-                const dist = a.position.distanceTo(player.position);
-                let dir = new THREE.Vector3();
-
-                if(a.userData.role === 'hunter') {
-                    if(a.userData.recovery > 0) { a.userData.recovery -= dt; return; }
-                    if(dist < 1.5) {
-                        playSound('hit'); 
-                        a.userData.recovery = 2.0; 
-                        // Player takes damage
-                        const f = document.getElementById('flash-overlay');
-                        f.style.backgroundColor = 'red'; f.style.opacity = 0.5;
-                        setTimeout(()=>f.style.opacity=0, 200);
-                        // Game Over Logic if player HP implement
-                        gameOver(false); // Immediate game over for now
-                        return;
-                    }
-                    if(dist < 40) { // Chase
-                        dir.subVectors(player.position, a.position).normalize();
-                        a.lookAt(player.position);
-                    }
-                } else {
-                    if(dist < 20) { // Flee
-                        dir.subVectors(a.position, player.position).normalize();
-                        a.lookAt(a.position.clone().add(dir));
-                    } else { // Wander
-                        if(!a.userData.wander || a.position.distanceTo(a.userData.wander) < 1) {
-                            a.userData.wander = new THREE.Vector3((Math.random()-0.5)*80, 0, (Math.random()-0.5)*80);
-                        }
-                        dir.subVectors(a.userData.wander, a.position).normalize();
-                        a.lookAt(a.userData.wander);
-                    }
-                }
-
-                if(dir.length() > 0) {
-                    const next = a.position.clone().add(dir.multiplyScalar(speed));
-                    if(!checkCol(next, a.userData.role==='hunter')) a.position.copy(next);
-                    else {
-                        // Slide AI
-                        const sx = a.position.clone().add(new THREE.Vector3(dir.x*speed,0,0));
-                        if(!checkCol(sx, a.userData.role==='hunter')) a.position.copy(sx);
-                        else {
-                            const sz = a.position.clone().add(new THREE.Vector3(0,0,dir.z*speed));
-                            if(!checkCol(sz, a.userData.role==='hunter')) a.position.copy(sz);
-                        }
-                    }
-                }
-
-                // Minimap update
-                if(a.userData.dot) {
-                    a.userData.dot.style.left = (a.position.x + 50)*1.3 + 'px';
-                    a.userData.dot.style.top = (a.position.z + 50)*1.3 + 'px';
-                }
-            });
-        }
-
-        function updateUI() {
-            document.getElementById('stamina-bar').style.width = state.stamina + "%";
-            if(state.stamina < 100) state.stamina += 0.05;
-
-            const mmP = document.getElementById('mm-player');
-            mmP.style.left = (player.position.x + 50)*1.3 + 'px';
-            mmP.style.top = (player.position.z + 50)*1.3 + 'px';
-            mmP.style.transform = `translate(-50%, -50%) rotate(${-player.rotation.y * 180/Math.PI}deg)`;
-
-            // Context Button Active State
-            let canInteract = false;
-            for(let p of pallets) if(player.position.distanceTo(p.position) < 3.5) canInteract = true;
-            for(let w of windows) if(player.position.distanceTo(w.position) < 3.0) canInteract = true;
-            
-            const btnInt = document.getElementById('btn-interact');
-            if(canInteract) btnInt.classList.add('active');
-            else btnInt.classList.remove('active');
-        }
-
-        function updateHealthUI() {
-            if(config.role !== 'survivor') { document.getElementById('health-display').style.display = 'none'; return; }
-            let s = ""; for(let i=0;i<player.userData.hp;i++) s+="❤️";
-            document.getElementById('health-display').innerHTML = s;
-        }
-
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-                if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape');
+                if(menuBtnIcon) menuBtnIcon.style.color = '#4B5563';
+                if(menuBtnIconWrapper) menuBtnIconWrapper.style.color = '#4B5563';
             } else {
-                if (document.exitFullscreen) document.exitFullscreen();
+                navbar.classList.remove('bg-white', 'shadow-md', 'py-2', 'text-gray-800');
+                navbar.classList.add('bg-transparent', 'py-4', 'text-white');
+                
+                navTitle.classList.remove('text-purple-900');
+                navSubtitle.classList.add('text-purple-100');
+                navSubtitle.classList.remove('text-purple-700');
+                
+                desktopMenu.classList.add('text-white');
+                desktopMenu.classList.remove('text-gray-600');
+
+                if(menuBtnIcon) menuBtnIcon.style.color = '#ffffff';
+                if(menuBtnIconWrapper) menuBtnIconWrapper.style.color = '#ffffff';
             }
-        }
+        });
 
-        function selectRole(r, el) {
-            config.role = r;
-            document.querySelectorAll('.role-card').forEach(e => e.classList.remove('selected'));
-            el.classList.add('selected');
-            updateCharOptions();
-        }
+        // Mobile Menu Toggle
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileLinks = document.querySelectorAll('.mobile-link');
+        let isMenuOpen = false;
 
-        function updateCharOptions() {
-            const grid = document.getElementById('char-options');
-            grid.innerHTML = '';
-            const list = config.role === 'survivor' 
-                ? [{id:'mercenary',name:'ทหารรับจ้าง'}, {id:'doctor',name:'หมอ'}, {id:'thief',name:'โจร'}]
-                : [{id:'ripper',name:'The Ripper'}, {id:'clown',name:'Clown'}];
-            list.forEach((c, i) => {
-                const b = document.createElement('div'); b.className = `char-btn ${i===0?'selected':''}`; b.innerText = c.name;
-                b.onclick = () => { config.char = c.id; document.querySelectorAll('.char-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); };
-                if(i===0) config.char = c.id;
-                grid.appendChild(b);
+        menuBtn.addEventListener('click', () => {
+            isMenuOpen = !isMenuOpen;
+            if (isMenuOpen) {
+                mobileMenu.classList.remove('hidden');
+                mobileMenu.classList.add('flex');
+                menuBtn.innerHTML = '<i data-lucide="x" class="w-7 h-7"></i>';
+            } else {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+                menuBtn.innerHTML = '<i data-lucide="menu" class="w-7 h-7"></i>';
+            }
+            lucide.createIcons(); 
+            
+            const icon = menuBtn.querySelector('svg') || menuBtn.querySelector('i');
+            if(icon) {
+                 icon.style.color = window.scrollY > 50 ? '#4B5563' : '#ffffff';
+            }
+            menuBtn.style.color = window.scrollY > 50 ? '#4B5563' : '#ffffff';
+        });
+
+        // Close mobile menu when clicking a link
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                isMenuOpen = false;
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+                menuBtn.innerHTML = '<i data-lucide="menu" class="w-7 h-7"></i>';
+                lucide.createIcons();
+                
+                const icon = menuBtn.querySelector('svg') || menuBtn.querySelector('i');
+                if(icon) {
+                    icon.style.color = window.scrollY > 50 ? '#4B5563' : '#ffffff';
+                }
+                menuBtn.style.color = window.scrollY > 50 ? '#4B5563' : '#ffffff';
             });
-        }
+        });
 
-        function gameOver(win) {
-            state.playing = false;
-            document.getElementById('hud').style.display = 'none';
-            document.getElementById('game-over').classList.remove('hidden');
-            document.querySelector('#game-over h1').innerText = win ? "YOU ESCAPED!" : "GAME OVER";
-        }
+        // Intersection Observer for Animations
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
 
-        window.onload = init;
-        function onResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        const animatedElements = document.querySelectorAll('.animate-on-scroll');
+        animatedElements.forEach(el => observer.observe(el));
     </script>
 </body>
 </html>
