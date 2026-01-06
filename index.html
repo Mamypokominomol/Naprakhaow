@@ -85,10 +85,11 @@
             </div>
 
             <!-- Desktop Menu -->
-            <div id="desktop-menu" class="hidden md:flex gap-8 transition-colors">
+            <div id="desktop-menu" class="hidden md:flex gap-6 lg:gap-8 transition-colors text-sm lg:text-base font-medium">
                 <a href="#home" class="hover:text-purple-400 transition-colors">หน้าแรก</a>
                 <a href="#about" class="hover:text-purple-400 transition-colors">ตำนานข้าว</a>
-                <a href="#product" class="hover:text-purple-400 transition-colors">สินค้าของเรา</a>
+                <a href="#product" class="hover:text-purple-400 transition-colors">สินค้า</a>
+                <a href="#learning" class="hover:text-purple-400 transition-colors">การอนุรักษ์ & เรียนรู้</a>
                 <a href="#process" class="hover:text-purple-400 transition-colors">กระบวนการ</a>
                 <a href="#activities" class="hover:text-purple-400 transition-colors">กิจกรรม</a>
                 <a href="#contact" class="px-4 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition-all transform hover:scale-105 shadow-lg flex items-center gap-2">
@@ -107,6 +108,7 @@
             <a href="#home" class="mobile-link text-gray-700 py-2 border-b border-gray-100 block">หน้าแรก</a>
             <a href="#about" class="mobile-link text-gray-700 py-2 border-b border-gray-100 block">ตำนานข้าว</a>
             <a href="#product" class="mobile-link text-gray-700 py-2 border-b border-gray-100 block">สินค้าของเรา</a>
+            <a href="#learning" class="mobile-link text-gray-700 py-2 border-b border-gray-100 block">การอนุรักษ์ & เรียนรู้</a>
             <a href="#process" class="mobile-link text-gray-700 py-2 border-b border-gray-100 block">กระบวนการ</a>
             <a href="#activities" class="mobile-link text-gray-700 py-2 border-b border-gray-100 block">กิจกรรม</a>
             <a href="#contact" class="mobile-link text-purple-700 font-bold py-2 block">ติดต่อเรา</a>
@@ -361,6 +363,89 @@
         </div>
     </section>
 
+    <!-- Learning & Conservation Section (New) -->
+    <section id="learning" class="py-20 bg-stone-50 relative overflow-hidden border-t border-purple-100">
+        <div class="absolute top-0 left-0 w-32 h-32 bg-green-100 rounded-br-full -z-0 opacity-50"></div>
+        <div class="container mx-auto px-4 relative z-10">
+            <!-- Header -->
+            <div class="text-center mb-16 animate-on-scroll">
+                <span class="text-green-600 font-bold tracking-wider uppercase text-sm">Conservation & Education</span>
+                <h2 class="text-3xl font-bold text-gray-900 mt-2">การอนุรักษ์พันธุกรรมข้าวสู่เยาวชน</h2>
+                <div class="w-24 h-1 bg-green-500 mx-auto rounded-full mt-4"></div>
+                <p class="text-gray-600 mt-6 text-lg max-w-2xl mx-auto italic">
+                    "เพราะอนาคตของข้าว คืออนาคตของลูกหลาน" <br>
+                    เรามุ่งมั่นถ่ายทอดจิตวิญญาณชาวนาและการอนุรักษ์พันธุ์ข้าวเบายอดม่วงสู่คนรุ่นใหม่
+                </p>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <!-- Text Content -->
+                <div class="space-y-8 animate-on-scroll delay-100">
+                    <!-- Wisdom Transmission -->
+                    <div class="flex gap-4 group">
+                        <div class="flex-shrink-0">
+                            <div class="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 group-hover:scale-110 transition-transform shadow-sm">
+                                <i data-lucide="book-open" class="w-7 h-7"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-green-700 transition-colors">ห้องเรียนอนุรักษ์พันธุกรรม</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                เปิดพื้นที่นาให้เป็นห้องเรียนมีชีวิต เด็กๆ จะได้เรียนรู้ตั้งแต่วิธีการคัดเลือก <strong>"แม่รวง"</strong> (การเก็บรักษาพันธุกรรมข้าวบริสุทธิ์) 
+                                ที่เป็นภูมิปัญญาดั้งเดิมกว่า 100 ปี เพื่อปลูกฝังจิตสำนึกในการหวงแหนและอนุรักษ์สายพันธุ์ข้าวท้องถิ่นไม่ให้สูญหาย
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Hands-on -->
+                    <div class="flex gap-4 group">
+                        <div class="flex-shrink-0">
+                            <div class="w-14 h-14 bg-yellow-100 rounded-2xl flex items-center justify-center text-yellow-600 group-hover:scale-110 transition-transform shadow-sm">
+                                <i data-lucide="users" class="w-7 h-7"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-yellow-700 transition-colors">ยุวเกษตรกรรุ่นใหม่</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                สนับสนุนให้เด็กและเยาวชนมีส่วนร่วมในทุกขั้นตอน ตั้งแต่การเตรียมดิน ปักดำ ไปจนถึงการแปรรูป 
+                                สร้างความภาคภูมิใจและรายได้เสริม พร้อมปลูกฝังหัวใจรักษ์สิ่งแวดล้อมให้เติบโตไปพร้อมกับต้นข้าว
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Culture -->
+                    <div class="flex gap-4 group">
+                        <div class="flex-shrink-0">
+                            <div class="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform shadow-sm">
+                                <i data-lucide="heart-handshake" class="w-7 h-7"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-purple-700 transition-colors">สืบสานศรัทธา</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                ดึงลูกหลานเข้าร่วมประเพณีท้องถิ่น เช่น <strong>"รับขวัญข้าวใหม่"</strong> และ <strong>"ลากพระ"</strong>
+                                เพื่อให้ตำนานข้าวเบายอดม่วงไม่ได้อยู่แค่ในแปลงนา แต่อยู่ในวิถีชีวิตและจิตใจของชาวนาพละทุกคนอย่างยั่งยืน
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Grid -->
+                <div class="relative animate-on-scroll delay-200">
+                    <div class="grid grid-cols-2 gap-4">
+                        <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=2070&auto=format&fit=crop" 
+                             alt="เด็กเรียนรู้" class="rounded-2xl shadow-lg w-full h-64 object-cover transform translate-y-8 hover:-translate-y-2 transition-transform duration-500">
+                        <img src="https://images.unsplash.com/photo-1615811361523-6bd03c772863?q=80&w=1974&auto=format&fit=crop" 
+                             alt="มือปลูกข้าว" class="rounded-2xl shadow-lg w-full h-64 object-cover hover:-translate-y-2 transition-transform duration-500">
+                    </div>
+                    <!-- Decorative Circle -->
+                    <div class="absolute -z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-white rounded-full blur-3xl opacity-40"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Process Timeline Section -->
     <section id="process" class="py-20 bg-stone-900 text-white">
         <div class="container mx-auto px-4">
@@ -432,27 +517,50 @@
         </div>
     </section>
 
-    <!-- Awards & Community Section -->
+    <!-- Awards & Community Section (Refined) -->
     <section id="awards" class="py-20 bg-stone-100">
         <div class="container mx-auto px-4">
              <div class="text-center mb-12 animate-on-scroll">
                 <h2 class="text-3xl font-bold text-gray-900">รางวัลและความภาคภูมิใจ</h2>
+                <p class="text-gray-500 mt-2">เครื่องหมายการันตีคุณภาพและความมุ่งมั่นของชุมชน</p>
             </div>
+
+            <!-- Modified Grid: No Large Placeholder, Added GAP, GI Details, and Image for Good Seed Award -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- GAP Standard -->
                 <div class="bg-white p-6 rounded-lg shadow-lg text-center border-t-4 border-yellow-500 animate-on-scroll hover:transform hover:-translate-y-2 transition-transform duration-300">
                     <i data-lucide="award" class="w-12 h-12 mx-auto text-yellow-500 mb-4"></i>
                     <h3 class="font-bold text-lg mb-2">มาตรฐาน GAP</h3>
-                    <p class="text-gray-600 text-sm">ได้รับการรับรองการปฏิบัติทางการเกษตรที่ดี (Good Agricultural Practices)</p>
+                    <p class="text-gray-600 text-sm mb-2">ได้รับการรับรองการปฏิบัติทางการเกษตรที่ดี</p>
+                    <p class="text-gray-500 text-xs">(Good Agricultural Practices)</p>
                 </div>
+
+                <!-- GI Standard -->
                 <div class="bg-white p-6 rounded-lg shadow-lg text-center border-t-4 border-purple-500 animate-on-scroll delay-100 hover:transform hover:-translate-y-2 transition-transform duration-300">
                     <i data-lucide="ribbon" class="w-12 h-12 mx-auto text-purple-500 mb-4"></i>
                     <h3 class="font-bold text-lg mb-2">สิ่งบ่งชี้ทางภูมิศาสตร์ (GI)</h3>
-                    <p class="text-gray-600 text-sm">ขึ้นทะเบียนเมื่อ 14 กันยายน 2565 ทะเบียนเลขที่ สช 66100212</p>
+                    <p class="text-gray-600 text-sm mb-1">ขึ้นทะเบียนเมื่อ 14 กันยายน 2565</p>
+                    <p class="text-purple-600 font-semibold text-sm">ทะเบียนเลขที่ สช 66100212</p>
                 </div>
-                <div class="bg-white p-6 rounded-lg shadow-lg text-center border-t-4 border-green-500 animate-on-scroll delay-200 hover:transform hover:-translate-y-2 transition-transform duration-300">
-                    <i data-lucide="sprout" class="w-12 h-12 mx-auto text-green-500 mb-4"></i>
-                    <h3 class="font-bold text-lg mb-2">รางวัลเมล็ดพันธุ์ดี</h3>
-                    <p class="text-gray-600 text-sm">รางวัลรองชนะเลิศอันดับ 2 การประกวดเมล็ดพันธุ์ข้าวคุณภาพ</p>
+
+                <!-- Good Seed Award with Image -->
+                <div class="bg-white rounded-lg shadow-lg text-center border-t-4 border-green-500 animate-on-scroll delay-200 hover:transform hover:-translate-y-2 transition-transform duration-300 overflow-hidden">
+                    <div class="h-40 overflow-hidden relative group">
+                         <img src="https://images.unsplash.com/photo-1629814596133-7a9154f856f6?q=80&w=2070&auto=format&fit=crop" 
+                              alt="รางวัลเมล็ดพันธุ์" 
+                              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                         <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
+                    </div>
+                    <div class="p-6">
+                        <div class="-mt-12 mb-4 relative z-10">
+                            <div class="w-12 h-12 mx-auto bg-white rounded-full flex items-center justify-center shadow-md">
+                                <i data-lucide="sprout" class="w-6 h-6 text-green-500"></i>
+                            </div>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2">รางวัลเมล็ดพันธุ์ดี</h3>
+                        <p class="text-gray-600 text-sm">รางวัลรองชนะเลิศอันดับ 2</p>
+                        <p class="text-gray-500 text-xs mt-1">การประกวดเมล็ดพันธุ์ข้าวคุณภาพ</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -471,7 +579,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Activity 1 -->
                 <div class="bg-stone-50 rounded-2xl overflow-hidden shadow-lg animate-on-scroll hover:shadow-xl transition-shadow">
-                    <img src="....." 
+                    <img src="..." 
                          alt="รับขวัญข้าวใหม่" class="w-full h-48 object-cover">
                     <div class="p-6">
                         <div class="text-purple-600 text-xs font-bold mb-2">กุมภาพันธ์ - มีนาคม</div>
@@ -481,7 +589,7 @@
                 </div>
                  <!-- Activity 2 -->
                  <div class="bg-stone-50 rounded-2xl overflow-hidden shadow-lg animate-on-scroll delay-100 hover:shadow-xl transition-shadow">
-                    <img src="......." 
+                    <img src="...." 
                          alt="ลากพระ" class="w-full h-48 object-cover">
                     <div class="p-6">
                         <div class="text-purple-600 text-xs font-bold mb-2">ตุลาคม</div>
@@ -491,7 +599,7 @@
                 </div>
                  <!-- Activity 3 -->
                  <div class="bg-stone-50 rounded-2xl overflow-hidden shadow-lg animate-on-scroll delay-200 hover:shadow-xl transition-shadow">
-                    <img src="........" 
+                    <img src="....." 
                          alt="แหล่งเรียนรู้" class="w-full h-48 object-cover">
                     <div class="p-6">
                         <div class="text-purple-600 text-xs font-bold mb-2">ตลอดปี</div>
